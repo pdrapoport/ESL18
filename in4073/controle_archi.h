@@ -18,13 +18,7 @@
 
 uint8_t mode;
 
-int32_t sp; // p angular rate gyro sensor output
-int32_t sq; // q angular rate gyro sensor output
-int32_t sr; // r angular rate gyro sensor output
-int32_t sax; // x-axis accelerometer sensor output
-int32_t say; // y-axis accelerometer sensor output
-int32_t saz; // z-axis accelerometer sensor output
-// lift, roll, pitch, yaw to be added
+
 
 // -------------------------------------------------------------------------------------------
 // Communication functions
@@ -63,5 +57,5 @@ void switchMode(uint8_t modeID);
 uint8_t readAttitude(void);
 
 // Reads input from barometer and computes height
-unin8_t readHeight(void);
+uint8_t readHeight(void);
 

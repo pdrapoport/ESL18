@@ -12,44 +12,45 @@
  * checkCRC():
  * - Check the integrity of the packet
  * 
+ * TO DO LIST:
+ * - Make the sendAck function
+ * - Finish the sliding window function in processPkt()
  */
 
 #include "msg2payload.h"
+#include <stdlib.h>
 
-void convertMsg(uint8_t dest, uint8_t cmd, uint8_t *msg, uint8_t *lenmsg){
-    uint8_t payload[MAXMSG];
-    uint8_t index = 0;
+payload_t convertMsg(uint8_t idCmd, uint8_t *msg){
+    payload_t payload;
+    uint8_t msglen = 0;
     int i = 0;
+    msglen = cmd2len(idCmd);
 
     // Start byte = 0xAA (1 byte)
-    payload[index++] = STARTBYTE;
+    payload.stByte = 0xAA;
 
     /* ID + Command byte (1 byte)
      * ID: 4 MSB -> PC2DRONE or DRONE2PC
      * Command: 4 LSB -> types of command
      *                    e.g. change mode, joystick input, setpoint input
      */
-    payload[index++] = (dest << 4) | (cmd & 0x0F);
+    payload.idCmd = idCmd;
     
-    // Message length (1 byte)
-    payload[index++] = sizeof(payload[1]) + 1 + *lenmsg + 2;
+    // Message number (1 byte)
+    payload.msgNum = msgId++;
 
     // ACTUAL MESSAGE
     // Copy input message
-    for(i = 0; i < *lenmsg; i++){
-        payload[i + index] = msg[i];
+    for(i = 0; i < msglen - ADDBYTES; i++){
+        payload.msg[i] = msg[i];
     }
-    index = index + *lenmsg;
     
     //compute crc
     uint16_t crc;
-    uint8_t *payload_p = payload;
-    crc = crc16_compute(payload_p + 1, index - 1, NULL); //compute crc without the start/stop byte
-    payload[index++] = highByte(crc);
-    payload[index++] = lowByte(crc);
-
-    payload[index++] = STOPBYTE;
-
+    crc = crc16_compute(&payload.idCmd, msglen - sizeof(payload.crc16), NULL); //compute crc without the start/stop byte
+    payload.crc16 = crc;
+    
+    /*
     #ifdef DEBUG
     printf("\nOriginal Payload: \n");
     for(i = 0; i < index; i++){
@@ -69,55 +70,83 @@ void convertMsg(uint8_t dest, uint8_t cmd, uint8_t *msg, uint8_t *lenmsg){
         }
         i++;
     }
-
-    //update message length and message values
-    *lenmsg = index;
-    for(i = 0; i < index; msg[i] = payload[i], i++);
+    */
+   printf("%04x %04x %04x ",payload.stByte,payload.idCmd,payload.msgNum);
+   for(i = 0; i < msglen - ADDBYTES; printf("%04x ",payload.msg[i]),i++);
+   printf("%04x\n",payload.crc16);
+   return payload;
 }
 
-void parsePayload(uint8_t *msg, uint8_t *length){
+
+uint8_t *parsePayload(payload_t packet){
     int i = 0;
-    bool startMsg = false;
-    uint8_t parsedMsg[MAXMSG];
-    uint8_t parsedLen = 0;
-    while(i < *length){
-        //handling start byte
-        if(startMsg == false && msg[i] == STARTBYTE){
-            printf("\nStart of Message");
-            startMsg = true;
-        } 
+    uint8_t *parsedMsg = malloc(MAXMSG);
+    uint8_t msglen = 0;
 
-        //handling packet with escape byte
-        else if(startMsg == true && msg[i] == ESCBYTE){
-            printf("\nFound Escape Byte");
-            parsedMsg[parsedLen++] = msg[i + 1];
-            i++;
-        }
+    if(!parsedMsg) return NULL;
 
-        //handling regular packet
-        else if(startMsg == true && msg[i] != STOPBYTE && msg[i] != ESCBYTE){
-            parsedMsg[parsedLen++] = msg[i];
-        }
+    msglen = cmd2len(packet.idCmd);
         
-        //handling stop byte
-        else if(startMsg == true && msg[i] == STOPBYTE && msg[i-1] != ESCBYTE){
-            printf("\nEnd of Message");
-            startMsg = false;
-        }
-        i++;
+    for(i = 0; i < msglen - ADDBYTES; i++){
+        parsedMsg[i] = packet.msg[i];
     }
 
     #ifdef DEBUG
     printf("\nParsed Message: \n");
-    for(i = 0; i < parsedLen; i++){
+    for(i = 0; i < msglen - ADDBYTES; i++){
         printf("%04x ", parsedMsg[i]);
     }
     #endif
 
-    //update message and packet length
-    *length = parsedLen;
-    for(i = 0; i < parsedLen; msg[i] = parsedMsg[i], i++);
+    return parsedMsg;
 }
+
+void receivePkt(){
+    //read data here
+    while(rx_queue.count){
+        recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
+    }
+}
+
+uint8_t cmd2len(uint8_t idCmd){
+    uint8_t msglen = 0;
+    switch(idCmd){
+        case PWMODE:
+            msglen = PWMODELEN;
+            break;
+        case PWMOV:
+            msglen = PWMOVLEN;
+            break;
+        case DWLOG:
+            msglen = DWLOGLEN;
+            break;
+        case DWMODE:
+            msglen = DWMODELEN;
+            break;
+        case PRMODE:
+            msglen = PRMODELEN;
+            break;
+        default:
+            msglen = 0;
+            break;
+    }
+    return msglen;
+}
+
+//TO DO
+void processPkt(){
+    uint8_t msgBuff[MAXMSG];
+    if(recChar[readIndex++] == STARTBYTE){
+        int msglen = 0;
+        int i = 0;
+        msglen = cmd2len(recChar[readIndex++]);
+        i = readIndex;
+        while(i < readIndex + msglen){
+            i++;
+        }
+    }
+}
+
 
 bool checkCRC(uint8_t *msg, uint8_t length){
     uint16_t calculatedCRC;
@@ -130,37 +159,25 @@ bool checkCRC(uint8_t *msg, uint8_t length){
 
 int main(){
     uint8_t msg[256];
-    uint8_t len = 4;
+    uint8_t len = 1;
     msg[0] = 0xAA;
-    msg[1] = 0x7D;
-    msg[2] = 0x7D;
+    msg[1] = 0xBB;
+    msg[2] = 0xCC;
     msg[3] = 0xDD;
+    msg[4] = 0xEE;
+    msg[5] = 0xFF;
+    msg[6] = 0x11;
+    msg[7] = 0x22;
+    //msg[8] = 0x33;
+    //msg[9] = 0x44;
+    //msg[10] = 0x55;
     printf("Original Message:\n");
     for(int j = 0; j < len; printf("%04x ",msg[j]), j++);
-    //printf("%d", *lenp);
-    convertMsg(0x01, 0x01, msg, &len);
+    printf("\n");
+    payload_t payload;
+    payload = convertMsg(PWMOV, msg);
 
-    #ifdef DEBUG
-    int i =0;
-    printf("\nSent Payload: \n");
-    for(i = 0; i < len; i++){
-        printf("%04x ", msg[i]);
-    }
-    #endif
-    
-    parsePayload(msg, &len);
-
-    #ifdef DEBUG
-    i = 0;
-    printf("\nReceived Payload: \n");
-    for(i = 0; i < len; i++){
-        printf("%04x ", msg[i]);
-    }
-    #endif
-
-    bool crcCheck;
-    crcCheck = checkCRC(msg, len);
-    if (crcCheck == true) printf("\nPacket maintains integrity\n");
-    else printf("\nPacket malformed\n");
+    uint8_t *recMsg = parsePayload(payload);
+    free(recMsg);
     return 0;
 }

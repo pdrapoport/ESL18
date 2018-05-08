@@ -12,6 +12,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdlib.h>
+
+#include "joystick.h"
+
+#define JS_DEV "/dev/input/by-id/usb-Logitech_Logitech_Extreme_3D-joystick"
 
 /*------------------------------------------------------------
  * console I/O
@@ -83,6 +88,8 @@ int	term_getchar()
 
 int serial_device = 0;
 int fd_RS232;
+int axis[6];
+int button[12];
 
 void rs232_open(void)
 {
@@ -174,13 +181,28 @@ int 	rs232_putchar(char c)
 }
 
 
-/*----------------------------------------------------------------
+//Pavel Rapoport
+//Packing input from joystick and sending it to FCB
+
+int sendInput(int *axisData) {
+}
+
+
+
+//Pavel Rapoport
+//Main function edited for regular polling of joystick for input data
+
+/*
+ *----------------------------------------------------------------
  * main -- execute terminal
  *----------------------------------------------------------------
  */
 int main(int argc, char **argv)
 {
-	char	c;
+	char		c;
+	int 		fd;
+	struct js_event js;
+	
 
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
 
@@ -188,6 +210,16 @@ int main(int argc, char **argv)
 	rs232_open();
 
 	term_puts("Type ^C to exit\n");
+
+	term_puts("\nConnecting joystick...\n");
+
+
+	if ((fd = open(JS_DEV, O_RDONLY)) < 0) {
+		term_puts("\nFailed to connect joystick\n");
+		//exit(1);
+	}
+
+	fcntl(fd, F_SETFL, O_NONBLOCK);
 
 	/* discard any incoming text
 	 */
@@ -198,12 +230,33 @@ int main(int argc, char **argv)
 	 */
 	for (;;)
 	{
-		if ((c = term_getchar_nb()) != -1)
+		while (read(fd, &js, sizeof(struct js_event)) ==
+                                        sizeof(struct js_event))  {
+
+                        /* register data
+                         */
+                        // fprintf(stderr,".");
+                        switch(js.type & ~JS_EVENT_INIT) {
+                                case JS_EVENT_BUTTON:
+                                        button[js.number] = js.value;
+                                        break;
+                                case JS_EVENT_AXIS:
+                                        axis[js.number] = js.value;
+                                        break;
+                        }
+                }
+		if ((c = sendInput()) < 0) 
+			perror("Error: failed to send input data to FCB\n");
+		
+		if ((c = term_getchar_nb()) != -1) 
 			rs232_putchar(c);
 
 		if ((c = rs232_getchar_nb()) != -1)
 			term_putchar(c);
-
+		
+		for (int i = 0; i < 12; ++i)
+			if (button[i])
+				//TODO Send command if any assigned to button
 	}
 
 	term_exitio();

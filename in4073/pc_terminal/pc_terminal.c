@@ -185,6 +185,7 @@ int 	rs232_putchar(char c)
 //Packing input from joystick and sending it to FCB
 
 int sendInput(int *axisData) {
+	return 0;
 }
 
 
@@ -202,6 +203,9 @@ int main(int argc, char **argv)
 	char		c;
 	int 		fd;
 	struct js_event js;
+	time_t 		last_button_pressed;
+
+	last_button_pressed = time(NULL);
 	
 
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
@@ -245,7 +249,7 @@ int main(int argc, char **argv)
                                         break;
                         }
                 }
-		if ((c = sendInput()) < 0) 
+		if ((c = sendInput(axis)) < 0) 
 			perror("Error: failed to send input data to FCB\n");
 		
 		if ((c = term_getchar_nb()) != -1) 
@@ -254,9 +258,15 @@ int main(int argc, char **argv)
 		if ((c = rs232_getchar_nb()) != -1)
 			term_putchar(c);
 		
-		for (int i = 0; i < 12; ++i)
-			if (button[i])
-				//TODO Send command if any assigned to button
+		if ((time(NULL) - last_button_pressed) > 0.015) {
+			last_button_pressed = time(NULL);
+			for (int i = 0; i < 10; ++i)
+				if (button[i]) {
+					char str[1];
+					sprintf(str, "%d", i);
+					rs232_putchar(str[0]);
+				}
+		}
 	}
 
 	term_exitio();

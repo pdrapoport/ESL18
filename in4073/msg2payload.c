@@ -105,6 +105,7 @@ void receivePkt(){
     //read data here
     while(rx_queue.count){
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
+        recChar[buffCount] = '\0'; // Used to detect if the message reception is not complete (and if not, to wait for it)
     }
 }
 
@@ -134,8 +135,7 @@ uint8_t cmd2len(uint8_t idCmd){
 }
 
 //TO DO
-void processPkt(){
-    uint8_t msgBuff[MAXMSG];
+/*void processPkt(){
     if(recChar[readIndex++] == STARTBYTE){
         int msglen = 0;
         int i = 0;
@@ -145,6 +145,103 @@ void processPkt(){
             i++;
         }
     }
+}*/
+
+// Author: Vincent Bejach
+void processPkt() {
+
+    enum states {
+        wait, first_byte_received, receiveMsg, processMsg, CRC_Check, transmit, panic
+    } state;
+    
+    uint8_t i, msglen = 0;
+    uint16_t timeout;
+    bool crc_result = false;
+
+    state = wait;
+
+    if (buffCount >= 12){ // Ensures we have already received at least 1 full message to avoid delay
+// Note: message length can be 38, but only when flushing drone flash. In this case, the drone doesn't do anything else, so it doesn't matter if there is delay
+
+        while(!messageComplete){
+
+            switch(state) {
+                case wait:
+                    if (recChar[readIndex] == STARTBYTE){
+
+                        state = first_byte_received;
+
+                    } else {
+
+                        readIndex++; // The current byte is not STARTBYTE, so we want to check the next one
+                    }
+
+                    break;
+
+                case first_byte_received:
+                    msglen = cmd2len(recChar[readIndex++]);
+                    state = receiveMsg;
+                    
+                    break;
+
+                case receiveMsg:
+                    i = 0;
+                    while(i < (msglen-1)){ // Should be a timeout somewhere in case link is broken
+                        if (recChar[readIndex++] == '\0'){
+                            // Do nothing and wait for the next packet to be received
+                        } else {
+                            i++;
+                        }
+                    }
+                    state = CRC_Check;
+                    break;
+
+                case CRC_Check:
+                    crc_result = checkCRC(recChar, msglen);
+                    if(crc_result == true){
+
+                        state = processMsg;
+
+                    } else {
+
+                        // Sliding window
+                        i = 0;
+                        while(recChar[i] != STARTBYTE) {
+                            i++;
+                        }
+                        i++; // Index of the next STARTBYTE
+
+                        slideMsg(i); // Modify the recChar buffer to start at the newly chosen STARTBYTE
+                        
+                        state = CRC_Check; // Is this change useful? state should still be at checkCRC
+                        break;
+                    }
+
+                    break;
+
+                case processMsg:
+                    getPayload();
+
+                    messageComplete = 1; // Indicate to other functions that it can run and process the command
+                    
+                    for(i=0; i<msglen; i++) {
+                        // Disable interrupt
+                        recChar[i] = 0;
+                        // Enable interrupt back
+                    }
+
+                    state = wait;
+
+                case panic:
+                    // Switch to panic mode
+                    break;
+
+                default:
+                    state = panic;
+            }
+        }
+    }
+
 }
 
 

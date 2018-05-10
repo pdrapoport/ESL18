@@ -66,6 +66,7 @@ $(abspath ../components/ble/common/ble_conn_params.c) \
 $(abspath ../components/ble/ble_services/ble_nus/ble_nus.c) \
 $(abspath ../components/ble/common/ble_srv_common.c) \
 $(abspath ../components/softdevice/common/softdevice_handler/softdevice_handler.c) \
+$(abspath ../components/libraries/crc16/crc16.c) \
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  = $(abspath ../components/toolchain/gcc/gcc_startup_nrf51.s)
@@ -91,6 +92,7 @@ INC_PATHS += -I$(abspath ../components/drivers_nrf/common)
 INC_PATHS += -I$(abspath ../components/ble/ble_advertising)
 INC_PATHS += -I$(abspath ../components/libraries/trace)
 INC_PATHS += -I$(abspath ../components/softdevice/common/softdevice_handler)
+INC_PATHS += -I$(abspath ../components/libraries/crc16)
 
 
 OBJECT_DIRECTORY = _build

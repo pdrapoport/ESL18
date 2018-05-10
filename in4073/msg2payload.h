@@ -49,3 +49,5 @@ uint8_t *parsePayload(payload_t packet);
 void receivePkt();
 uint8_t cmd2len(uint8_t idCmd);
 bool checkCRC(uint8_t *msg, uint8_t length);
+
+bool messageComplete = false;

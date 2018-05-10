@@ -134,20 +134,48 @@ uint8_t cmd2len(uint8_t idCmd){
     return msglen;
 }
 
-//TO DO
-/*void processPkt(){
-    if(recChar[readIndex++] == STARTBYTE){
-        int msglen = 0;
-        int i = 0;
-        msglen = cmd2len(recChar[readIndex++]);
-        i = readIndex;
-        while(i < readIndex + msglen){
-            i++;
-        }
-    }
-}*/
 
 // Author: Vincent Bejach
+/* Remove the first i-1 bytes from the recChar array, and move the remaining bytes at the start of the array (so recChar starts at index i)
+ * Ex: recChar = [1 2 3 4 5 '\0'] -> slide(2) -> recChar = [3 4 5 '\0' '\0'? '\0'?]
+ * The characters marked ? are irrelevant because they are situated after the first '\0' and thus will never be processed. They will also be overwritten by the next characters being added to recChar
+ */
+void slideMsg(uint8_t i) {
+    uint16_t count = 0;
+    uint8_t tmp[MAXMSG];
+
+    // Disable interrupts
+
+    for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
+        tmp[count-i] = recChar[count]
+    }
+
+    strncpy(recChar, tmp, MAXMSG); // Store the remaining characters back into recChar
+
+    buffCount = buffCount - (i-1); // Store the new length of recChar so that the future additions to it are done correctly
+
+    // Enable interrupts back
+
+    // Note: I think doing it like this avoids the need to allocate a temporary buffer for the packet to process: this should prevent a race condition between interrupt and the sliding function. It is the only place where we need to write to recChar, so there shouldn't be any problem for all the other interactions with this array (reads in the processPkt function)
+}
+
+
+// Author: Vincent Bejach
+// Get the payload from the processed packet and store it in the global variable receivedMsg for further processing
+void getPayload(uint8_t msglen) {
+    uint8_t i, msgend = msglen - 16;
+
+    for (i = 2; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
+        receivedMsg[i-2] = recChar[i];
+    }
+}
+
+
+// Author: Vincent Bejach
+/* Implement the FSM defined for the communication protocol. 
+ * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
+ * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
+ */
 void processPkt() {
 
     enum states {
@@ -155,15 +183,16 @@ void processPkt() {
     } state;
     
     uint8_t i, msglen = 0;
-    uint16_t timeout;
+    //uint16_t timeout; // TO BE IMPLEMENTED
     bool crc_result = false;
+    bool panic_on = false; // Used to exit the loop in case of an emergency transition to panic mode
 
     state = wait;
 
     if (buffCount >= 12){ // Ensures we have already received at least 1 full message to avoid delay
-// Note: message length can be 38, but only when flushing drone flash. In this case, the drone doesn't do anything else, so it doesn't matter if there is delay
+// Note: message length can also be 38, but only when flushing drone flash memory. In this case, the drone doesn't do anything else, so it doesn't matter if there is delay in the execution of this function
 
-        while(!messageComplete){
+        while(!messageComplete && !panic_on){
 
             switch(state) {
                 case wait:
@@ -186,9 +215,11 @@ void processPkt() {
 
                 case receiveMsg:
                     i = 0;
-                    while(i < (msglen-1)){ // Should be a timeout somewhere in case link is broken
+                    while(i < (msglen-1)){ // Should be a timeout somewhere in case link is broken, which makes the FSM go into panic state - TO BE IMPLEMENTED
                         if (recChar[readIndex++] == '\0'){
                             // Do nothing and wait for the next packet to be received
+                            state = receiveMsg;
+                            break;
                         } else {
                             i++;
                         }
@@ -204,7 +235,7 @@ void processPkt() {
 
                     } else {
 
-                        // Sliding window
+                        // Sliding window (search for the next STARTBYTE character, and restart the beginning of the packet prccessing)
                         i = 0;
                         while(recChar[i] != STARTBYTE) {
                             i++;
@@ -212,28 +243,26 @@ void processPkt() {
                         i++; // Index of the next STARTBYTE
 
                         slideMsg(i); // Modify the recChar buffer to start at the newly chosen STARTBYTE
+                        readIndex = 0; // As we discart everything previosu to the new STARTBYTE, making the array starting at 0 again, the readIndex should also be reset.
                         
-                        state = CRC_Check; // Is this change useful? state should still be at checkCRC
+                        state = first_byte_received; // Make sure the function restarts at the beginning of the packet processing
                         break;
                     }
 
                     break;
 
                 case processMsg:
-                    getPayload();
+                    getPayload(msglen);
 
-                    messageComplete = 1; // Indicate to other functions that it can run and process the command
+                    messageComplete = true; // Indicate to other functions that it can run and process the command
                     
-                    for(i=0; i<msglen; i++) {
-                        // Disable interrupt
-                        recChar[i] = 0;
-                        // Enable interrupt back
-                    }
+                    slideMsg(msglen+1); // Remove the processed packet from the queue, and make recChar start at the following byte. The interrupts are handled inside the function, preventing race conditions with newly received characters
 
                     state = wait;
 
                 case panic:
-                    // Switch to panic mode
+                    // Switch to panic mode - TO BE IMPLEMENTED
+                    panic_on = true; // Allows to exit the while and to go on with the panic mode
                     break;
 
                 default:

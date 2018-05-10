@@ -30,6 +30,8 @@
 
 #define MAXMSG          256
 
+#define MAXPLDSIZE 50 // Maximum payload size (50 is actually too big, but it gies room for future protocol extensions)
+
 typedef struct payload{
     uint8_t stByte;       //start byte
     uint8_t idCmd;        //id and command
@@ -51,3 +53,4 @@ uint8_t cmd2len(uint8_t idCmd);
 bool checkCRC(uint8_t *msg, uint8_t length);
 
 bool messageComplete = false;
+uint8_t receivedMsg[MAXPLDSIZE];

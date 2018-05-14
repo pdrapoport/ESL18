@@ -198,6 +198,7 @@ void processPkt() {
                 case wait:
                     if (recChar[readIndex] == STARTBYTE){
 
+                        readIndex++;
                         state = first_byte_received;
 
                     } else {
@@ -217,13 +218,14 @@ void processPkt() {
                     i = 0;
                     while(i < (msglen-1)){ // Should be a timeout somewhere in case link is broken, which makes the FSM go into panic state - TO BE IMPLEMENTED
                         if (recChar[readIndex++] == '\0'){
-                            // Do nothing and wait for the next packet to be received
-                            state = receiveMsg;
-                            break;
+                            // Do nothing and wait for the next packet to be received (ie loop here until the rest of the packet is received)
+
+                            // The infinite loop risk is (will be) taken care of by the timeout
                         } else {
                             i++;
                         }
                     }
+
                     state = CRC_Check;
                     break;
 

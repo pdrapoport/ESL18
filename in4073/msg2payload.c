@@ -19,6 +19,7 @@
 
 #include "msg2payload.h"
 #include <stdlib.h>
+#include <string.h>
 
 payload_t convertMsg(uint8_t idCmd, uint8_t *msg){
     payload_t payload;
@@ -96,18 +97,19 @@ uint8_t *parsePayload(payload_t packet){
     for(i = 0; i < msglen - ADDBYTES; i++){
         printf("%04x ", parsedMsg[i]);
     }
+    printf("\n");
     #endif
 
     return parsedMsg;
 }
-
+/*
 void receivePkt(){
     //read data here
     while(rx_queue.count){
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
         recChar[buffCount] = '\0'; // Used to detect if the message reception is not complete (and if not, to wait for it)
     }
-}
+}*/
 
 uint8_t cmd2len(uint8_t idCmd){
     uint8_t msglen = 0;
@@ -143,17 +145,24 @@ uint8_t cmd2len(uint8_t idCmd){
 void slideMsg(uint8_t i) {
     uint16_t count = 0;
     uint8_t tmp[MAXMSG];
+    printf("Sliding message...\n");
 
     // Disable interrupts
 
     for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
-        tmp[count-i] = recChar[count]
+        tmp[count-i] = recChar[count];
     }
-
-    strncpy(recChar, tmp, MAXMSG); // Store the remaining characters back into recChar
-
-    buffCount = buffCount - (i-1); // Store the new length of recChar so that the future additions to it are done correctly
-
+    int j = 0;
+    //strncpy(recChar, tmp, MAXMSG); // Store the remaining characters back into recChar
+    memcpy(recChar, tmp, MAXMSG);
+    readIndex = 0;
+    for(j = 0; j <= 15; printf("%04x ",recChar[j]),j++);printf("\n");
+    printf("old Buffcount: %d\n", buffCount);
+    //if (i<=buffCount) {
+        buffCount = buffCount - (i);
+    //}
+    //else buffCount=0; // Store the new length of recChar so that the future additions to it are done correctly
+    printf("new Buffcount: %d\n", buffCount);
     // Enable interrupts back
 
     // Note: I think doing it like this avoids the need to allocate a temporary buffer for the packet to process: this should prevent a race condition between interrupt and the sliding function. It is the only place where we need to write to recChar, so there shouldn't be any problem for all the other interactions with this array (reads in the processPkt function)
@@ -163,10 +172,11 @@ void slideMsg(uint8_t i) {
 // Author: Vincent Bejach
 // Get the payload from the processed packet and store it in the global variable receivedMsg for further processing
 void getPayload(uint8_t msglen) {
-    uint8_t i, msgend = msglen - 16;
+    uint8_t i, msgend = msglen - 2;
 
-    for (i = 2; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
+    for (i = 3; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
         receivedMsg[i-2] = recChar[i];
+        printf("%04x ",receivedMsg[i-2]);
     }
 }
 
@@ -197,13 +207,16 @@ void processPkt() {
             switch(state) {
                 case wait:
                     if (recChar[readIndex] == STARTBYTE){
-
+                        printf("Detected AA at %d, changed to first_byte_received\n",readIndex);
                         readIndex++;
                         state = first_byte_received;
+                        
 
                     } else {
-
-                        readIndex++; // The current byte is not STARTBYTE, so we want to check the next one
+                        printf("No AA, slide msg\n");
+                        slideMsg(1);
+                        
+                        //readIndex++; // The current byte is not STARTBYTE, so we want to check the next one
                     }
 
                     break;
@@ -211,42 +224,56 @@ void processPkt() {
                 case first_byte_received:
                     msglen = cmd2len(recChar[readIndex++]);
                     state = receiveMsg;
-                    
+                    printf("Changed to receiveMsg state, msglen = %d, readIndex: %d\n",msglen,readIndex);
+                    if(msglen == 0){printf("Invalid msglen\n");slideMsg(readIndex-1);state=wait;}
                     break;
 
                 case receiveMsg:
                     i = 0;
-                    while(i < (msglen-1)){ // Should be a timeout somewhere in case link is broken, which makes the FSM go into panic state - TO BE IMPLEMENTED
-                        if (recChar[readIndex++] == '\0'){
+                    while(i < (msglen-3)){ // Should be a timeout somewhere in case link is broken, which makes the FSM go into panic state - TO BE IMPLEMENTED
+                        //printf("%04x\n",recChar[readIndex]);
+                        //if (recChar[readIndex++] == '\0'){
                             // Do nothing and wait for the next packet to be received (ie loop here until the rest of the packet is received)
-
+                           // printf("no char\n");
                             // The infinite loop risk is (will be) taken care of by the timeout
-                        } else {
+                       // } else {
+                           readIndex++;
                             i++;
-                        }
+                        //}
+                        printf("readIndex: %d\n",readIndex);
                     }
 
                     state = CRC_Check;
+                    printf("Changed to CRC Check state, current readIndex: %d\n",readIndex);
+                for(i = 0; i <= readIndex; printf("%04x ",recChar[i]),i++);printf("\n");
                     break;
 
                 case CRC_Check:
-                    crc_result = checkCRC(recChar, msglen);
+                    
+                    crc_result = checkCRC(recChar + readIndex + 1 - msglen, msglen); //sends the recChar pointer starting from the start byte
+                                                                                     //the current readIndex is pointing at the lowByte of CRC
                     if(crc_result == true){
 
                         state = processMsg;
+                        printf("CRC Correct, change to processMsg\n");
 
                     } else {
+                        printf("CRC Incorrect, sliding message\n");
 
                         // Sliding window (search for the next STARTBYTE character, and restart the beginning of the packet prccessing)
                         i = 0;
-                        while(recChar[i] != STARTBYTE) {
+                        while(recChar[i + readIndex + 2 - msglen] != STARTBYTE) { //start looking from the cmd byte 
+                                                                                  //(which is the current readIndex which is pointing at the lowByte of CRC
+                                                                                  // plus 2 minus msglen to point to the cmd byte)
+                            printf("i: %d, index %d:%04x\n",i, i + readIndex + 2 - msglen,recChar[i + readIndex + 2 - msglen]);
                             i++;
                         }
-                        i++; // Index of the next STARTBYTE
-
-                        slideMsg(i); // Modify the recChar buffer to start at the newly chosen STARTBYTE
-                        readIndex = 0; // As we discart everything previosu to the new STARTBYTE, making the array starting at 0 again, the readIndex should also be reset.
                         
+                        //i++; // Index of the next STARTBYTE
+                        printf("Found new start byte at %d: %04x\n",i + readIndex + 2 - msglen,recChar[i + readIndex + 2 - msglen]);
+                        slideMsg(i + readIndex + 2 - msglen); // Modify the recChar buffer to start at the newly chosen STARTBYTE
+                        readIndex++; // As we discart everything previosu to the new STARTBYTE, making the array starting at 1 again (after start byte), the readIndex should also be reset.
+                        printf("%04x\n",recChar[readIndex]);
                         state = first_byte_received; // Make sure the function restarts at the beginning of the packet processing
                         break;
                     }
@@ -258,7 +285,7 @@ void processPkt() {
 
                     messageComplete = true; // Indicate to other functions that it can run and process the command
                     
-                    slideMsg(msglen+1); // Remove the processed packet from the queue, and make recChar start at the following byte. The interrupts are handled inside the function, preventing race conditions with newly received characters
+                    slideMsg(msglen); // Remove the processed packet from the queue, and make recChar start at the following byte. The interrupts are handled inside the function, preventing race conditions with newly received characters
 
                     state = wait;
 
@@ -279,14 +306,14 @@ void processPkt() {
 bool checkCRC(uint8_t *msg, uint8_t length){
     uint16_t calculatedCRC;
     uint16_t packetCRC = combineByte(msg[length - 2], msg[length - 1]);
-    calculatedCRC = crc16_compute(msg, length - 2, NULL);
+    calculatedCRC = crc16_compute(msg + 1, length - 3, NULL); // msg + 1 (not counting start byte in the calculation), length - 3 (removing 2 bytes crc and 1 byte start byte)
     //printf("%04x", crc);
     if(calculatedCRC == packetCRC) return true;
     else return false;
 }
 
 int main(){
-    uint8_t msg[256];
+    /*uint8_t msg[256];
     uint8_t len = 1;
     msg[0] = 0xAA;
     msg[1] = 0xBB;
@@ -306,6 +333,22 @@ int main(){
     payload = convertMsg(PWMOV, msg);
 
     uint8_t *recMsg = parsePayload(payload);
-    free(recMsg);
+    free(recMsg);*/
+    buffCount = 14;
+    recChar[0] = 0x01;
+    recChar[1] = 0xAA;
+    recChar[2] = PWMODE;
+    recChar[3] = 0xAA;
+    recChar[4] = 0x02;
+    recChar[5] = 0xA8;
+    recChar[6] = 0xEE;
+    recChar[7] = 0xDD;
+    recChar[8] = 0xAA;
+    recChar[9] = PWMODE;
+    recChar[10] = 0x00;
+    recChar[11] = 0x01;
+    recChar[12] = 0xA8;
+    recChar[13] = 0xEE;
+    processPkt();
     return 0;
 }

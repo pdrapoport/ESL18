@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "crc16.h"
-#include "in4073.h"
+//#include "in4073.h"
 
 #define DEBUG
 
@@ -20,11 +20,11 @@
 #define PRMODE 0x14    //PC2Drone Read Mode
 
 //Length per CMD (in bytes)
-#define PWMODELEN  5   
-#define PWMOVLEN   12
-#define DWLOGLEN   38
-#define DWMODELEN  5
-#define PRMODELEN  4
+#define PWMODELEN  6   
+#define PWMOVLEN   13
+#define DWLOGLEN   39
+#define DWMODELEN  6
+#define PRMODELEN  5
 
 #define ADDBYTES 4
 

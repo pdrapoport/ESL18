@@ -12,8 +12,8 @@
  * receivePkt():
  * - Retrieve packet from the rx buffer
  */
-#define DRONE
-#include "msg2payload.h"
+#define PC
+#include "msgprocess.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -63,7 +63,7 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
     return payload;
 }
 
-#ifdef DRONE
+#ifdef DRONE2PC
 void receivePkt(){
     //read data here
     while(rx_queue.count){

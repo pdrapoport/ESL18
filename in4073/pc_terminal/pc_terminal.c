@@ -7,11 +7,15 @@
  *------------------------------------------------------------
  */
 
+#define PC
+
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdlib.h>
+#include "msgprocess.h"
 
 /*------------------------------------------------------------
  * console I/O
@@ -42,6 +46,7 @@ void	term_puts(char *s)
 {
 	fprintf(stderr,"%s",s);
 }
+
 
 void	term_putchar(char c)
 {
@@ -90,7 +95,7 @@ void rs232_open(void)
   	int 		result;
   	struct termios	tty;
 
-       	fd_RS232 = open("/dev/ESLBOARD", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
 
 	assert(fd_RS232>=0);
 
@@ -172,7 +177,53 @@ int 	rs232_putchar(char c)
 	assert(result == 1);
 	return result;
 }
+int pc2drone(uint8_t *msg){
+    int result;
+    int msglen = cmd2len(msg[1]);
+	//fprintf(stderr,"msglen: %d\n",msglen);
+	do {
+		result = (int) write(fd_RS232, msg, msglen);
+	} while (result == 0);
 
+	assert(result == msglen);
+	return result;
+}
+
+void process_key(uint8_t c)
+{
+	uint8_t msg[MAXMSG];
+	msg[0] = (char)c;
+	uint8_t *payload;
+	//fprintf(stderr,"%04x\n",msg[0]);
+	switch(msg[0]){
+		case 'q':
+		case 'a':
+		case 'w':
+		case 's':
+		case 'e':
+		case 'd':
+		case 'r':
+		case 'f':
+		case 27 :
+			payload = makePayload(PWKB, msg);
+			break;
+		
+		case 'y':
+			msg[0] = 0x01;
+			msg[1] = 0x56;
+			msg[2] = 0x00;
+			msg[3] = 0x2C;
+			msg[4] = 0x01;
+			msg[5] = 0x4D;
+			msg[6] = 0x00;
+			msg[7] = 0x16;
+			payload = makePayload(PWMOV, msg);
+			break;
+
+	} 
+	pc2drone(payload);
+	free(payload);
+}
 
 /*----------------------------------------------------------------
  * main -- execute terminal
@@ -188,7 +239,7 @@ int main(int argc, char **argv)
 	rs232_open();
 
 	term_puts("Type ^C to exit\n");
-
+	initProtocol();
 	/* discard any incoming text
 	 */
 	while ((c = rs232_getchar_nb()) != -1)
@@ -198,8 +249,23 @@ int main(int argc, char **argv)
 	 */
 	for (;;)
 	{
-		if ((c = term_getchar_nb()) != -1)
-			rs232_putchar(c);
+		if ((c = term_getchar_nb()) != -1){
+			process_key(c);
+			/*
+			if(c == 'q'){
+				uint8_t msg[MAXMSG];
+    			msg[0] = 0x01;
+    			uint8_t *payload = makePayload(PWMODE, msg);
+    			//int msglen = cmd2len(payload[1]);
+    			//int i = 0;
+				pc2drone(payload);
+    			//printf("Payload: \n");
+    			//for (i=0;i<msglen;printf("%04x ",payload[i]),i++);
+    			//printf("\n");
+    			free(payload);
+			}*/
+		}
+			//rs232_putchar(c);
 
 		if ((c = rs232_getchar_nb()) != -1)
 			term_putchar(c);

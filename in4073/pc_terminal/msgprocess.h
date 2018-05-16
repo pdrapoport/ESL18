@@ -1,10 +1,9 @@
-#ifndef MSG2PAYLOAD_H__
-#define MSG2PAYLOAD_H__
+#ifndef MSGPROCESS_H__
+#define MSGPROCESS_H__
 
 #include <stdio.h>
 #include <stdbool.h>
 #include "crc16.h"
-#include "in4073.h"
 
 #define STARTBYTE       0xAA
 #define STOPBYTE        0x55

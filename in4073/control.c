@@ -28,3 +28,21 @@ void run_filters_and_control()
 	// ae[0] = xxx, ae[1] = yyy etc etc
 	update_motors();
 }
+
+void manual_mode()
+{
+//	ae[0] = 
+}
+
+int find_sqrt(int arg) {
+	int result = 200;
+	if (result * result < arg)
+		while (result * result < arg) 
+			++result;
+	else
+		while (result * result > arg)
+			--result;
+	return result;
+}
+
+

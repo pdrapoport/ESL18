@@ -14,6 +14,7 @@
  */
 
 #include "in4073.h"
+#include <math.h>
 
 
 enum states {
@@ -219,10 +220,12 @@ void step(enum states *state, int c) {
           printf("No mode selected\n");
         }
         break;
-			case Panic_Mode:
-				break;
-			case Calibration_Mode:
-				break;
+	
+	case Panic_Mode:
+	  break;
+	
+	case Calibration_Mode:
+	  break;
     }
 }
 
@@ -232,7 +235,7 @@ void step(enum states *state, int c) {
  */
 void process_key(uint8_t c)
 {
-	printf("Recv key: %d\n", c);
+	//printf("Recv key: %d\n", c);
 	switch (c)
 	{
 		case 'q':
@@ -269,33 +272,34 @@ void process_key(uint8_t c)
 		case '1':
 			nrf_gpio_pin_toggle(RED);
 			break;
-  	case '2':
-    	step(&state,'2');
-    	break;
-    case '3':
-   	  step(&state,'3');
-    	break;
-    case '4':
-      step(&state,'4');
-      break;
-    case '5':
-      step(&state,'5');
-    	break;
-    case '6':
-    	step(&state,'6');
-    	break;
-    case '7':
-      step(&state,'7');
-    	break;
-    case '8':
-      step(&state,'8');
-      break;
-    case '0':
-      step(&state,'0');
-      break;
-    case 'p':
-      printf("%s\n",getCurrentState(state));
-      break;
+  		case '2':
+    			step(&state,'2');
+    			break;
+    		case '3':
+   	  		step(&state,'3');
+    			break;
+    		case '4':
+      			step(&state,'4');
+      			break;
+    		case '5':
+      			step(&state,'5');
+    			break;
+    		case '6':
+    			step(&state,'6');
+    			break;
+    		case '7':
+      			step(&state,'7');
+    			break;
+    		case '8':
+      			step(&state,'8');
+      			break;
+    		case '0':
+      			step(&state,'0');
+			printf("Go to safe mode\n");
+      			break;
+    		case 'p':
+      			printf("%s\n",getCurrentState(state));
+      			break;
 		default:
 			nrf_gpio_pin_toggle(RED);
 	}
@@ -305,6 +309,17 @@ void process_key(uint8_t c)
  * main -- everything you need is here :)
  *------------------------------------------------------------------
  */
+
+void checkMotors() {
+	uint8_t data[8];
+	for(int i = 0; i < 8; ++i) {
+		data[i] = dequeue(&rx_queue);
+	}
+	for(int i = 0; i < 4; ++i) {
+		ae[i] = data[2*i] | (data[2*i+1] << 8);
+	}
+}
+
 int main(void)
 {
 	uart_init();
@@ -324,6 +339,9 @@ int main(void)
 	{
 		if (rx_queue.count) process_key( dequeue(&rx_queue) );
 
+		/*if (rx_queue.count) {
+			checkMotors();
+		}*/
 		if (check_timer_flag())
 		{
 			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
@@ -331,11 +349,12 @@ int main(void)
 			adc_request_sample();
 			read_baro();
 
-			//printf("%10ld | ", get_time_us());
-			//printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
-			//printf("%6d %6d %6d | ", phi, theta, psi);
-			//printf("%6d %6d %6d | ", sp, sq, sr);
-			//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+//			printf("%10ld | ", get_time_us());
+//			printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+//			printf("%6d %6d %6d | ", phi, theta, psi);
+//			printf("%6d %6d %6d | ", sp, sq, sr);
+//			printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+//			printf("\n");
 
 			clear_timer_flag();
 		}

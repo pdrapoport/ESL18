@@ -34,7 +34,7 @@ int16_t motor[4],ae[4];
 void run_filters_and_control();
 
 // Timers
-#define TIMER_PERIOD	50 //50ms=20Hz (MAX 23bit, 4.6h)
+#define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)
 void timers_init(void);
 uint32_t get_time_us(void);
 bool check_timer_flag(void);

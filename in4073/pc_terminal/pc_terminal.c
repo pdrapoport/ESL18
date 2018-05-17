@@ -191,7 +191,7 @@ int pc2drone(uint8_t *msg){
 
 void process_key(uint8_t c)
 {
-	uint8_t msg[MAXMSG];
+	uint8_t msg[PWMOVLEN - ADDBYTES];
 	msg[0] = (char)c;
 	uint8_t *payload;
 	//fprintf(stderr,"%04x\n",msg[0]);
@@ -289,6 +289,23 @@ void process_key(uint8_t c)
 	//fprintf(stderr,"sent %c\n",msg[0]);
 }
 
+void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
+	uint8_t *payload;
+	uint8_t msg[PWMOVLEN - ADDBYTES];
+	msg[0] = highByte(lift);
+	msg[1] = lowByte(lift);
+	msg[2] = highByte(roll);
+	msg[3] = lowByte(roll);
+	msg[4] = highByte(pitch);
+	msg[5] = lowByte(pitch);
+	msg[6] = highByte(yaw);
+	msg[7] = lowByte(yaw);
+	
+	payload = makePayload(PWMOV, msg);
+	pc2drone(payload);
+	free(payload);
+}
+
 /*----------------------------------------------------------------
  * main -- execute terminal
  *----------------------------------------------------------------
@@ -330,4 +347,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-

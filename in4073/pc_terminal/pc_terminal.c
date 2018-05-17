@@ -95,7 +95,7 @@ int	term_getchar()
 #include <sys/select.h>
 
 int serial_device = 0;
-int fd_RS232;
+int fd_RS232, js_fd;
 fd_set set;
 short axis[4];
 struct timeval timeout;
@@ -334,11 +334,27 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
  * main -- execute terminal
  *----------------------------------------------------------------
  */
+void checkJoystick() {
+	struct js_event	js;
+	while (read(js_fd, &js, sizeof(struct js_event)) ==
+        		sizeof(struct js_event))  {
+		switch(js.type & ~JS_EVENT_INIT) {
+			case JS_EVENT_BUTTON:
+				if (js.value) {
+					//TODO: send command for this button to FCB
+				}
+				break;
+			case JS_EVENT_AXIS:
+			//if (js.number < 4)
+				axis[js.number] = js.value;
+			break;
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 	char		c;
-	int 		js_fd;
-	struct js_event js;
 	struct timeval 	start;
 	struct timeval	tm1, tm2;
 
@@ -374,6 +390,7 @@ int main(int argc, char **argv)
 	/* send & receive
 	 */
 	long long diff;
+	long long absdiff;
 
 	for (;;)
 	{
@@ -384,26 +401,11 @@ int main(int argc, char **argv)
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
-		if (diff > 100) {
-			int intrCount = 0;
+		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
+		if (diff > 1000 && absdiff > 5000) {
 			gettimeofday(&tm1, NULL);
-			diff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-			fprintf(stderr, "%d\n", diff);
-			while (read(js_fd, &js, sizeof(struct js_event)) ==
-                                        sizeof(struct js_event))  {
-                        	switch(js.type & ~JS_EVENT_INIT) {
-                                	case JS_EVENT_BUTTON:
-						if (js.value) {
-							//TODO: send command for this button to FCB
-						}
-                                        	break;
-                                	case JS_EVENT_AXIS:
-						//if (js.number < 4)
-                                        		axis[js.number] = js.value;
-                                        	break;
-                        	}
-				++intrCount;
-                	}
+			fprintf(stderr, "%d\n", absdiff);
+			checkJoystick();
 			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
 
 

@@ -375,9 +375,6 @@ int main(int argc, char **argv)
 	 */
 	long long diff;
 
-	int ae[4];
-	int b = 1;
-	int d = 1;
 	for (;;)
 	{
 		if ((c = term_getchar_nb()) != -1){
@@ -387,11 +384,11 @@ int main(int argc, char **argv)
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
-		if (diff > 15) {
+		if (diff > 100) {
 			int intrCount = 0;
 			gettimeofday(&tm1, NULL);
 			diff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-			//fprintf(stderr, "%d ", diff);
+			fprintf(stderr, "%d\n", diff);
 			while (read(js_fd, &js, sizeof(struct js_event)) ==
                                         sizeof(struct js_event))  {
                         	switch(js.type & ~JS_EVENT_INIT) {
@@ -407,22 +404,15 @@ int main(int argc, char **argv)
                         	}
 				++intrCount;
                 	}
-			//fprintf(stderr, "%d\t%d\t%d\t%d\t%d\n", intrCount, axis[0], axis[1], axis[2], axis[3]);
-			send_axis_input();
+			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
 
-			ae[0] = find_sqrt((b*axis[1] - d*axis[3] - b*axis[2])/(4*b*d));   // A
-			ae[1] = find_sqrt((b*axis[2] - d*axis[3] - 2*d*axis[0])/(4*b*d)); // B
- 			ae[2] = find_sqrt((-2*d*axis[1] - d*axis[3] - b*axis[2])/(4*b*d)); // C
-			ae[3] = find_sqrt((b*axis[2] - d*axis[3] + 2*d*axis[0])/(4*b*d)); // D
 
-			fprintf(stderr, "%d\t%d\t%d\t%d\n", ae[0], ae[1], ae[2], ae[3]);
+			if ((c = term_getchar_nb()) != -1) 
+				rs232_putchar(c);
+			}
 
-		//if ((c = term_getchar_nb()) != -1) 
-		//	rs232_putchar(c);
-		}
-
-		//if ((c = rs232_getchar_nb()) != -1)
-		//	term_putchar(c);
+		if ((c = rs232_getchar_nb()) != -1)
+			term_putchar(c);
 	}
 
 	term_exitio();

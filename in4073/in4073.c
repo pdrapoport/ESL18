@@ -298,36 +298,6 @@ void process_key(uint8_t c){
 		case 'l': 
 			//roll, pitch control p2 down
 			break;
-
-		case '0':
-			//mode 0
-			break;
-		case '1':
-			//mode 1
-			break;
-		case '2':
-			//mode 2
-			break;
-		case '3':
-			//mode 3
-			break;
-		case '4':
-			//mode 4
-			break;
-		case '5':
-			//mode 5
-			break;
-		case '6':
-			//mode 6
-			break;
-		case '7':
-			//mode 7
-			break;
-		case '8':
-			//mode 8
-			break;
-		
-		
 		case 43:
 			//pitch down
 			break;

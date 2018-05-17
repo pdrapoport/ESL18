@@ -182,15 +182,16 @@ void changeMov(uint8_t *msg){
 	int msglen = cmd2len(PWMOV);
 	for(j = 0; j < msglen-ADDBYTES; printf("%04x ",msg[j]),j++);
 	printf("\n"); */
-	int16_t mot1, mot2, mot3, mot4;
-	mot1 = (int16_t)combineByte(msg[0], msg[1]);
-	mot2 = (int16_t)combineByte(msg[2], msg[3]);
-	mot3 = (int16_t)combineByte(msg[4], msg[5]);
-	mot4 = (int16_t)combineByte(msg[6], msg[7]);
-	ae[0] = mot1;
-	ae[1] = mot2;
-	ae[2] = mot3;
-	ae[3] = mot4;
+	int16_t lift, roll, pitch, yaw;
+	lift = (int16_t)combineByte(msg[0], msg[1]);
+	roll = (int16_t)combineByte(msg[2], msg[3]);
+	pitch = (int16_t)combineByte(msg[4], msg[5]);
+	yaw = (int16_t)combineByte(msg[6], msg[7]);
+	//do the conversion from lift,roll,pitch,yaw to motor output
+	//ae[0] = lift;
+	//ae[1] = roll;
+	//ae[2] = pitch;
+	//ae[3] = yaw
 }
 void changeKbParam(uint8_t *msg){
 	process_key((uint8_t)msg[0]);

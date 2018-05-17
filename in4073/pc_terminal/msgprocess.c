@@ -68,7 +68,7 @@ void receivePkt(){
     //read data here
     while(rx_queue.count){
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
-        recChar[buffCount] = '\0';
+        //recChar[buffCount] = '\0';
         //printf("%04x\n",recChar[buffCount-1]); // Used to detect if the message reception is not complete (and if not, to wait for it)
     }
 }

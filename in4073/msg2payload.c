@@ -66,7 +66,7 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
 #ifdef DRONE
 void receivePkt(){
     //read data here
-    while(rx_queue.count){
+    if(rx_queue.count){
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
         recChar[buffCount] = '\0';
         //printf("%04x\n",recChar[buffCount-1]); // Used to detect if the message reception is not complete (and if not, to wait for it)
@@ -155,7 +155,7 @@ void slideRecMsg(uint8_t i) {
     }
     // Store the remaining characters back into recChar
     memcpy(recChar, tmp, MAXMSG); //may cause buffer overflow according to dudes in stackoverflow
-    
+
     recBuff = recBuff - i;
     // Enable interrupts back
 
@@ -266,11 +266,11 @@ void processPkt() {
 
                 case processMsg:
                     receivedMsg[++recBuff] = getPayload(msglen);
-                    
+                    //printf("SHIT\n");
                     messageComplete = true; // Indicate to other functions that it can run and process the command
                     
                     slideMsg(msglen); // Remove the processed packet from the queue, and make recChar start at the following byte. The interrupts are handled inside the function, preventing race conditions with newly received characters
-
+                    //printf("processMsg\n");
                     state = wait;
                     break;
 
@@ -284,6 +284,7 @@ void processPkt() {
             }
             
         }
+        messageComplete = false;
     }
 
 }

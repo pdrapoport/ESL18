@@ -196,18 +196,44 @@ void process_key(uint8_t c)
 	uint8_t *payload;
 	//fprintf(stderr,"%04x\n",msg[0]);
 	switch(msg[0]){
-		case 'q':
-		case 'a':
-		case 'w':
-		case 's':
-		case 'e':
-		case 'd':
-		case 'r':
-		case 'f':
-		case 27 :
+		//motor control
+		case 'd': //motor 0 up
+		case 'c': //motor 0 down
+		case 'f': //motor 1 up
+		case 'v': //motor 1 down
+		case 'g': //motor 2 up
+		case 'b': //motor 2 down
+		case 'h': //motor 3 up
+		case 'n': //motor 4 down
+
+		//lift, roll, pitch, yaw control
+		case 'a': //lift up
+		case 'z': //lift down
+		case 'q': //yaw down
+		case 'w': //yaw up
+		case 'u': //yaw control p up
+		case 'j': //yaw control p down
+		case 'i': //roll, pitch control p1 up
+		case 'k': //roll, pitch control p1 down
+		case 'o': //roll, pitch control p2 up
+		case 'l': //roll, pitch control p2 down
 			payload = makePayload(PWKB, msg);
 			break;
+
+		//mode
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+			payload = makePayload(PWMODE, msg);
+			break;
 		
+		//test case
 		case 'y':
 			msg[0] = 0x01;
 			msg[1] = 0x56;
@@ -220,9 +246,47 @@ void process_key(uint8_t c)
 			payload = makePayload(PWMOV, msg);
 			break;
 
-	} 
+		//arrow and escape
+		case 27:
+			term_getchar_nb();
+			switch(term_getchar_nb()){
+				case 65:
+					//arrow up, pitch down
+					msg[0] = 43;
+					break;
+
+				case 66:
+					//arrow down, pitch up
+					msg[0] = 95;
+					break;
+
+				case 68:
+					//arrow left, roll up
+					msg[0] = 40;
+					break;
+				
+				case 67:
+					//arrow right, roll down
+					msg[0] = 41;
+					break;
+
+				default:
+					//escape, abort
+					msg[0] = 27;
+					break;
+			}
+			payload = makePayload(PWKB, msg);
+			break;
+		
+		default:
+			msg[0] = '/';
+			payload = makePayload(PWKB, msg);
+			break;
+	}
+
 	pc2drone(payload);
 	free(payload);
+	//fprintf(stderr,"sent %c\n",msg[0]);
 }
 
 /*----------------------------------------------------------------
@@ -250,22 +314,10 @@ int main(int argc, char **argv)
 	for (;;)
 	{
 		if ((c = term_getchar_nb()) != -1){
+			fprintf(stderr, "char: %c\n",c);
 			process_key(c);
-			/*
-			if(c == 'q'){
-				uint8_t msg[MAXMSG];
-    			msg[0] = 0x01;
-    			uint8_t *payload = makePayload(PWMODE, msg);
-    			//int msglen = cmd2len(payload[1]);
-    			//int i = 0;
-				pc2drone(payload);
-    			//printf("Payload: \n");
-    			//for (i=0;i<msglen;printf("%04x ",payload[i]),i++);
-    			//printf("\n");
-    			free(payload);
-			}*/
+			
 		}
-			//rs232_putchar(c);
 
 		if ((c = rs232_getchar_nb()) != -1)
 			term_putchar(c);

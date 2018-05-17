@@ -20,6 +20,7 @@
 #include "ml.h"
 #include "app_util_platform.h"
 #include <math.h>
+#include "msg2payload.h"
 
 #define RED		22
 #define YELLOW		24
@@ -106,5 +107,12 @@ queue ble_tx_queue;
 volatile bool radio_active;
 void ble_init(void);
 void ble_send(void);
+
+// PROCESSING
+void process_key(uint8_t c);
+void processRecMsg();
+void changeMode();
+void changeMov(uint8_t *msg);
+void changeKbParam(uint8_t *msg);
 
 #endif // IN4073_H__

@@ -254,6 +254,7 @@ void process_key(uint8_t c)
 		case '6':
 		case '7':
 		case '8':
+		case 'p':
 			payload = makePayload(PWMODE, msg);
 			break;
 		

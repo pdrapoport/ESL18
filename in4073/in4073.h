@@ -33,6 +33,8 @@ bool demo_done;
 // Control
 int16_t motor[4],ae[4];
 void run_filters_and_control();
+void manual_mode();
+int16_t axis[4];
 
 // Timers
 #define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)
@@ -49,7 +51,7 @@ void gpio_init(void);
 typedef struct {
 	uint8_t Data[QUEUE_SIZE];
 	uint16_t first,last;
-  	uint16_t count; 
+  	uint16_t count;
 } queue;
 void init_queue(queue *q);
 void enqueue(queue *q, char x);

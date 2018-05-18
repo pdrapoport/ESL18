@@ -14,9 +14,8 @@
  */
 
 #include "in4073.h"
-#define DRONE2PC
-//#include "msg2payload.h"
 
+#define DRONE2PC
 
 enum states {
   Safe_Mode,            // Mode 0
@@ -221,10 +220,10 @@ void step(enum states *state, int c) {
           printf("No mode selected\n");
         }
         break;
-	
+
 	case Panic_Mode:
 	  break;
-	
+
 	case Calibration_Mode:
 	  break;
     }
@@ -266,36 +265,36 @@ void process_key(uint8_t c){
 			ae[3] -= 10;
 			if (ae[3] < 0) ae[3] = 0;
 			break;
-		
+
 		//lift, roll, pitch, yaw control
-		case 'a': 
+		case 'a':
 			//lift up
 			break;
-		case 'z': 
+		case 'z':
 			//lift down
 			break;
-		case 'q': 
+		case 'q':
 			//yaw down
 			break;
-		case 'w': 
+		case 'w':
 			//yaw up
 			break;
-		case 'u': 
+		case 'u':
 			//yaw control p up
 			break;
-		case 'j': 
+		case 'j':
 			//yaw control p down
 			break;
-		case 'i': 
+		case 'i':
 			//roll, pitch control p1 up
 			break;
-		case 'k': 
+		case 'k':
 			//roll, pitch control p1 down
 			break;
-		case 'o': 
+		case 'o':
 			//roll, pitch control p2 up
 			break;
-		case 'l': 
+		case 'l':
 			//roll, pitch control p2 down
 			break;
 		case 43:
@@ -316,34 +315,34 @@ void process_key(uint8_t c){
 		case '1':
 			nrf_gpio_pin_toggle(RED);
 			break;
-  		case '2':
-    			step(&state,'2');
-    			break;
-    		case '3':
-   	  		step(&state,'3');
-    			break;
-    		case '4':
-      			step(&state,'4');
-      			break;
-    		case '5':
-      			step(&state,'5');
-    			break;
-    		case '6':
-    			step(&state,'6');
-    			break;
-    		case '7':
-      			step(&state,'7');
-    			break;
-    		case '8':
-      			step(&state,'8');
-      			break;
-    		case '0':
-      			step(&state,'0');
-			printf("Go to safe mode\n");
-      			break;
-    		case 'p':
-      			printf("%s\n",getCurrentState(state));
-      			break;
+  	case '2':
+    	step(&state,'2');
+    	break;
+		 case '3':
+	  	step(&state,'3');
+			break;
+		case '4':
+  		step(&state,'4');
+  		break;
+		case '5':
+  		step(&state,'5');
+			break;
+		case '6':
+			step(&state,'6');
+			break;
+		case '7':
+  		step(&state,'7');
+			break;
+		case '8':
+  		step(&state,'8');
+  		break;
+		case '0':
+  		step(&state,'0');
+	    printf("Go to safe mode\n");
+  		break;
+		case 'p':
+  		printf("%s\n",getCurrentState(state));
+  		break;
 		default:
 			nrf_gpio_pin_toggle(RED);
 			break;
@@ -363,20 +362,21 @@ void processRecMsg(){
 
 		switch(idCmd){
 			case PWMODE:
-				
+        printf("PWMODE\n");
+        changeMode(msg);
 				break;
 			case PWMOV:
 				//printf("PWMOV\n");
 				changeMov(msg);
 				break;
 			case DWLOG:
-				
+
 				break;
 			case DWMODE:
-				
+
 				break;
 			case PRMODE:
-				
+
 				break;
 			case PWKB:
 				changeKbParam(msg);
@@ -387,24 +387,28 @@ void processRecMsg(){
 		}
 		slideRecMsg(1);
 	}
-	
+
 }
 
-void changeMode();
+void changeMode(uint8_t *msg){
+   process_key((uint8_t)msg[0]);
+}
+
 void changeMov(uint8_t *msg){
-	/* int j = 0;
-	int msglen = cmd2len(PWMOV);
-	for(j = 0; j < msglen-ADDBYTES; printf("%04x ",msg[j]),j++);
-	printf("\n"); */
-	int16_t mot1, mot2, mot3, mot4;
-	mot1 = (int16_t)combineByte(msg[0], msg[1]);
-	mot2 = (int16_t)combineByte(msg[2], msg[3]);
-	mot3 = (int16_t)combineByte(msg[4], msg[5]);
-	mot4 = (int16_t)combineByte(msg[6], msg[7]);
-	ae[0] = mot1;
-	ae[1] = mot2;
-	ae[2] = mot3;
-	ae[3] = mot4;
+	// int j = 0;
+	// int msglen = cmd2len(PWMOV);
+	// for(j = 0; j < msglen-ADDBYTES; printf("%04x ",msg[j]),j++);
+	// printf("\n");
+	//int16_t mot1, mot2, mot3, mot4;
+	axis[0] = (int16_t)combineByte(msg[0], msg[1]);
+	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
+	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
+	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
+
+  printf("ax_0 = %d | ax_2 = %d | ax_2 = %d | ax_3 = %d\n", axis[0], axis[1], axis[2], axis[3]);
+  if (state == Manual_Mode)
+    manual_mode();
+
 }
 void changeKbParam(uint8_t *msg){
 	process_key((uint8_t)msg[0]);
@@ -443,16 +447,17 @@ int main(void)
 	state = Safe_Mode;
 	while (!demo_done)
 	{
+
 		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
 		receivePkt();
-		
+
 
 		/*if (rx_queue.count) {
 			checkMotors();
 		}*/
 		if (check_timer_flag())
 		{
-			
+
 			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
 			adc_request_sample();
@@ -460,16 +465,15 @@ int main(void)
 			read_baro();
 			//printf("read baro\n");
 			processPkt();
-			//printf("processpkt\n");
 			//printf("test %d\n",i++);
 			processRecMsg();
 			//printf("processrecmsg\n");
-			
-			/* printf("%10ld | ", get_time_us());
-			printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
-			printf("%6d %6d %6d | ", phi, theta, psi);
-			printf("%6d %6d %6d | ", sp, sq, sr);
-			printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure); */
+
+			//printf("%10ld | ", get_time_us());
+			//printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+			//printf("%6d %6d %6d | ", phi, theta, psi);
+			//printf("%6d %6d %6d | ", sp, sq, sr);
+			//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
 
 			clear_timer_flag();
 			//printf("cleartimerflag\n");

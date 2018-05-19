@@ -2,13 +2,13 @@
  * Haris Suwignyo
  *
  * initProtocol(): Initialize variable values
- * 
+ *
  * cmd2len():
  * - Convert command input to the length of the message
- * 
+ *
  * makePayload():
  * - Create a payload with command and message input
- * 
+ *
  * receivePkt():
  * - Retrieve packet from the rx buffer
  */
@@ -42,18 +42,18 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
      *                    e.g. change mode, joystick input, setpoint input
      */
     payload[index++] = idCmd;
-    
+
     //msgNum TO BE IMPLEMENTED, just set it to 0x00 for now
     payload[index++] = 0x00;
 
     // ACTUAL MESSAGE
     // Copy input message
-    
+
     for(i = 0; i < msglen-ADDBYTES; i++){
         payload[i + index] = msg[i];
     }
     index = index + msglen-ADDBYTES;
-    
+
     //compute crc
     uint16_t crc;
     //uint8_t *payload_p = payload;
@@ -107,7 +107,7 @@ bool checkCRC(uint8_t *msg, uint8_t length){
     uint16_t calculatedCRC;
     uint16_t packetCRC = combineByte(msg[length - 2], msg[length - 1]);
     calculatedCRC = crc16_compute(msg + 1, length - 3, NULL); // msg + 1 (not counting start byte in the calculation), length - 3 (removing 2 bytes crc and 1 byte start byte)
-    
+
     if(calculatedCRC == packetCRC) return true;
     else return false;
 }
@@ -135,10 +135,10 @@ void slideMsg(uint8_t i) {
     }
     // Store the remaining characters back into recChar
     memcpy(recChar, tmp, MAXMSG); //may cause buffer overflow according to dudes in stackoverflow
-    
+
     readIndex = 0;
     buffCount = buffCount - i;
-    
+
     // Enable interrupts back
 
     // Note: I think doing it like this avoids the need to allocate a temporary buffer for the packet to process: this should prevent a race condition between interrupt and the sliding function. It is the only place where we need to write to recChar, so there shouldn't be any problem for all the other interactions with this array (reads in the processPkt function)
@@ -155,7 +155,7 @@ void slideRecMsg(uint8_t i) {
     }
     // Store the remaining characters back into recChar
     memcpy(recChar, tmp, MAXMSG); //may cause buffer overflow according to dudes in stackoverflow
-    
+
     recBuff = recBuff - i;
     // Enable interrupts back
 
@@ -171,17 +171,17 @@ message_t getPayload(uint8_t msglen) {
     message_t tmpMsg;
 
     tmpMsg.idCmd = recChar[1];
-    
+
     for (i = 3; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
         tmpMsg.msg[i-3] = recChar[i];
     }
-    
+
     return tmpMsg;
 }
 
 
 // Author: Vincent Bejach
-/* Implement the FSM defined for the communication protocol. 
+/* Implement the FSM defined for the communication protocol.
  * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
  * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
  */
@@ -190,7 +190,7 @@ void processPkt() {
     enum states {
         wait, first_byte_received, receiveMsg, processMsg, CRC_Check, transmit, panic
     } state;
-    
+
     uint8_t i, msglen = 0;
     //uint16_t timeout; // TO BE IMPLEMENTED
     bool crc_result = false;
@@ -206,7 +206,7 @@ void processPkt() {
                     if (recChar[readIndex] == STARTBYTE){
                         readIndex++;
                         state = first_byte_received;
-                        
+
 
                     } else {
                         slideMsg(1); //slide msg to push the unwanted byte
@@ -234,7 +234,7 @@ void processPkt() {
                         //move readindex to crc
                         readIndex++;
                         i++;
-                        
+
                     }
 
                     state = CRC_Check;
@@ -248,16 +248,16 @@ void processPkt() {
                     } else {
                         // Sliding window (search for the next STARTBYTE character, and restart the beginning of the packet prccessing)
                         i = 0;
-                        while(recChar[i + readIndex + 2 - msglen] != STARTBYTE) { //start looking from the cmd byte 
+                        while(recChar[i + readIndex + 2 - msglen] != STARTBYTE) { //start looking from the cmd byte
                                                                                   //(which is the current readIndex which is pointing at the lowByte of CRC
                                                                                   // plus 2 minus msglen to point to the cmd byte)
-                            
+
                             i++;
                         }
-                        
+
                         slideMsg(i + readIndex + 2 - msglen); // Modify the recChar buffer to start at the newly chosen STARTBYTE
                         readIndex++; // As we discart everything previosu to the new STARTBYTE, making the array starting at 1 again (after start byte), the readIndex should also be reset.
-                        
+
                         state = first_byte_received; // Make sure the function restarts at the beginning of the packet processing
                         break;
                     }
@@ -266,9 +266,9 @@ void processPkt() {
 
                 case processMsg:
                     receivedMsg[++recBuff] = getPayload(msglen);
-                    
+
                     messageComplete = true; // Indicate to other functions that it can run and process the command
-                    
+
                     slideMsg(msglen); // Remove the processed packet from the queue, and make recChar start at the following byte. The interrupts are handled inside the function, preventing race conditions with newly received characters
 
                     state = wait;
@@ -282,7 +282,7 @@ void processPkt() {
                 default:
                     state = panic;
             }
-            
+
         }
     }
 

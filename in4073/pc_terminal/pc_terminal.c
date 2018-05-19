@@ -403,9 +403,9 @@ int main(int argc, char **argv)
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
 		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff > 3000 && absdiff > 3000) {
+		if (diff > 15 && absdiff > 3000) {
 			gettimeofday(&tm1, NULL);
-			fprintf(stderr, "%d\n", absdiff);
+			//fprintf(stderr, "%d\n", absdiff);
 			//checkJoystick();
 			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
 			for(int i = 0; i < 4; ++i) {

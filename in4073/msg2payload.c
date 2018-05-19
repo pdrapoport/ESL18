@@ -16,7 +16,6 @@
 #include "msg2payload.h"
 #include <stdlib.h>
 #include <string.h>
-int waitInRows;
 void initProtocol(){
     msgId = 0;
     buffCount = 0;
@@ -69,7 +68,7 @@ void receivePkt(){
     //read data here
     while (rx_queue.count) {
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
-        printf("%02X ", recChar[buffCount - 1]);
+        //printf("%02X ", recChar[buffCount - 1]);
     }
 }
 #endif
@@ -188,8 +187,6 @@ bool processPkt() {
     bool crc_result = false;
     //bool panic_on = false; // Used to exit the loop in case of an emergency transition to panic mode
 
-    for(int readCounter = 0; readCounter < 1; ++readCounter) {
-        //printf("READ!\n");
         receivePkt();
         while (readIndex < buffCount) {
             switch (packState) {
@@ -201,7 +198,7 @@ bool processPkt() {
                     else {
                         slideMsg(1);
                     }
-                    printf("WAIT!\n");
+                    //printf("WAIT!\n");
                     break;
                 case first_byte_received:
                     msglen = cmd2len(recChar[readIndex++]);
@@ -210,16 +207,16 @@ bool processPkt() {
                         slideMsg(1);
                         packState = wait;
                     }
-                    printf("FIRST!\n");
+                    //printf("FIRST!\n");
                     break;
                 case receiveMsg:
-                    if (readIndex < msglen) {
+                    if (readIndex < msglen - 1) {
                         ++readIndex;
                     }
                     else {
                         packState = CRC_Check;
                     }
-                    printf("RECV\n");
+                    //printf("RECV\n");
                     break;
                 case CRC_Check:
                     crc_result = checkCRC(recChar, msglen);
@@ -230,18 +227,18 @@ bool processPkt() {
                         packState = wait;
                         slideMsg(1);
                     }
-                    printf("CRC!\n");
+                    //printf("CRC!\n");
                     break;
                 case processMsg:
                     receivedMsg[++recBuff] = getPayload(msglen);
-                    printf("RECEIVED MESSAGE: ");
+                    //printf("RECEIVED MESSAGE: ");
                     for (int k = 0; k < msglen; ++k) {
-                        printf("%02X ", recChar[k]);
+                        //printf("%02X ", recChar[k]);
                     }
-                    printf("\n");
-                    slideMsg(1);
+                    //printf("\n");
+                    slideMsg(msglen);
                     packState = wait;
-                    printf("PROCESS!\n");
+                    //printf("PROCESS!\n");
                     return true;
                 case panic:
                     //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
@@ -251,6 +248,5 @@ bool processPkt() {
                     packState = panic;
             }
         }
-    }
     return false;
 }

@@ -404,8 +404,8 @@ void changeMov(uint8_t *msg){
 	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
-
-  printf("ax_0 = %d | ax_2 = %d | ax_2 = %d | ax_3 = %d\n", axis[0], axis[1], axis[2], axis[3]);
+  printf("%10ld | ", get_time_us());
+  printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
   if (state == Manual_Mode)
     manual_mode();
 

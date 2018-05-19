@@ -52,6 +52,7 @@ uint8_t readIndex;
 uint8_t recBuff;
 
 bool messageComplete;
+bool receiveComplete;
 message_t receivedMsg[MAXPLDSIZE];
 void initProtocol();
 uint8_t *makePayload(uint8_t idCmd, uint8_t *msg);

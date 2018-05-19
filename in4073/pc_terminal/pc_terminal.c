@@ -106,7 +106,8 @@ void rs232_open(void)
   	int 		result;
   	struct termios	tty;
 
-       	fd_RS232 = open("/dev/ESLBOARD", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+				printf("%d\n",fd_RS232);
 	assert(fd_RS232>=0);
 
   	result = isatty(fd_RS232);
@@ -358,6 +359,8 @@ int main(int argc, char **argv)
 	char		c;
 	struct timeval 	start;
 	struct timeval	tm1, tm2;
+	long long diff;
+	long long absdiff;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
@@ -385,13 +388,12 @@ int main(int argc, char **argv)
 
 	/* discard any incoming text
 	 */
-	while ((c = rs232_getchar_nb()) != -1)
-		fputc(c,stderr);
+	//while ((c = rs232_getchar_nb()) != -1)
+		//fputc(c,stderr);
 
 	/* send & receive
 	 */
-	long long diff;
-	long long absdiff;
+
 
 	for (;;)
 	{
@@ -405,13 +407,10 @@ int main(int argc, char **argv)
 		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
 		if (diff > 15 && absdiff > 3000) {
 			gettimeofday(&tm1, NULL);
-			//fprintf(stderr, "%d\n", absdiff);
-			//checkJoystick();
-			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
-			for(int i = 0; i < 4; ++i) {
-				axis[i]++;
-			}
+		//	fprintf(stderr, "diff = %d | absdiff = %d\n", diff, absdiff);
+			checkJoystick();
 
+			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
 
 			if ((c = term_getchar_nb()) != -1)
 				rs232_putchar(c);

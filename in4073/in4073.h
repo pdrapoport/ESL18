@@ -32,9 +32,12 @@ bool demo_done;
 
 // Control
 int16_t motor[4],ae[4];
+int16_t axis[4];
+int16_t phi_avg, theta_avg, psi_avg;
 void run_filters_and_control();
 void manual_mode();
-int16_t axis[4];
+void panic_mode();
+void calibration_mode();
 
 // Timers
 #define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)

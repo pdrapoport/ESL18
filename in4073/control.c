@@ -65,7 +65,7 @@ void run_filters_and_control()
 	// control loops and/or filters
 
 	// ae[0] = xxx, ae[1] = yyy etc etc
-	update_motors();
+	//update_motors();
 }
 
 void manual_mode()
@@ -81,6 +81,67 @@ void manual_mode()
 			ae[i] = 500;
 	}
 
-	printf("ae_0 = %d | ae_1 = %d | ae_2 = %d | ae_3 = %d\n", ae[0], ae[1], ae[2], ae[3]);
+	printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);
 	//update_motors();
+}
+
+void panic_mode(){
+	uint32_t start_time, current_time;
+	for (int i = 0; i<4; i++){
+		ae[i] = 500;
+	}
+	start_time = get_time_us();
+	printf("Entering Panic_Mode\n");
+	while (ae[0] != 0 || ae[1] != 0 || ae[2] != 0 || ae[3] != 0){
+		current_time = get_time_us();
+		if ((current_time - start_time)/1000 >= 100){
+			for (int i = 0; i<4; i++){
+				ae[i] -= 10;
+			}
+			printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);
+			//update_motors();
+			start_time = current_time;
+		}
+	}
+}
+
+void calibration_mode(){
+	uint32_t start_time, current_time;
+	int16_t phi_array[10], theta_array[10], psi_array[10];
+	int i = 0;
+    int phi_sum = 0, theta_sum = 0, psi_sum = 0;
+
+	start_time = get_time_us();
+	current_time = get_time_us();
+
+	//Delay of 25 secs
+	while ((current_time - start_time)/1000 <= 25000)
+		current_time = get_time_us();
+
+    while (i<10){
+		if (check_timer_flag()){
+			clear_timer_flag();
+			if (check_sensor_int_flag()){
+				get_dmp_data();
+				//run_filters_and_control();
+				phi_array[i] = phi;
+				theta_array[i] = theta;
+				psi_array[i] = psi;
+				i++;
+			}
+		}
+	}
+
+	for (i = 0; i < 10; i++){
+		phi_sum += phi_array[i];
+		theta_sum += theta_array[i];
+		psi_sum += psi_array[i];
+	}
+	phi_avg = phi_sum / i;
+	theta_avg = theta_sum / i;
+	psi_avg = psi_sum / i;
+
+	// printf("phi_avg = %d\n", phi_avg);
+	// printf("theta_avg = %d\n", theta_avg);
+	// printf("psi_avg = %d\n", psi_avg);
 }

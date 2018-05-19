@@ -69,9 +69,9 @@ void receivePkt(){
     //read data here
     if(rx_queue.count){
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
-        receiveComplete = true;
         //recChar[buffCount] = '\0';
         //printf("%04x\n",recChar[buffCount-1]); // Used to detect if the message reception is not complete (and if not, to wait for it)
+        receiveComplete = true;
     }
 }
 #endif
@@ -197,21 +197,29 @@ void processPkt() {
     //uint16_t timeout; // TO BE IMPLEMENTED
     bool crc_result = false;
     bool panic_on = false; // Used to exit the loop in case of an emergency transition to panic mode
+    bool failedCRC = false;
     messageComplete = false;
     state = wait;
+    uint32_t timeout = 0;
 
     if (buffCount >= MINBUFFCOUNT){ // Ensures we have already received at least 1 full message to avoid delay
 // Note: message length can also be 38, but only when flushing drone flash memory. In this case, the drone doesn't do anything else, so it doesn't matter if there is delay in the execution of this function
-        while(!messageComplete && !panic_on && receiveComplete){
+        while(!messageComplete && !panic_on){
             switch(state) {
                 case wait:
                     if (recChar[readIndex] == STARTBYTE){
                         readIndex++;
+                        timeout = 0;
                         state = first_byte_received;
                         
 
-                    } else {
+                    } else if(recChar[readIndex] != STARTBYTE && timeout > 40) {
+                        timeout = 0;
+                        state = panic;
+                    }
+                    else{
                         slideMsg(1); //slide msg to push the unwanted byte
+                        timeout++;
                     }
 
                     break;
@@ -250,18 +258,23 @@ void processPkt() {
                     } else {
                         // Sliding window (search for the next STARTBYTE character, and restart the beginning of the packet prccessing)
                         i = 0;
-                        while(recChar[i + readIndex + 2 - msglen] != STARTBYTE) { //start looking from the cmd byte 
+                        while(recChar[i + readIndex + 2 - msglen] != STARTBYTE && !failedCRC) { //start looking from the cmd byte 
                                                                                   //(which is the current readIndex which is pointing at the lowByte of CRC
                                                                                   // plus 2 minus msglen to point to the cmd byte)
-                            
+                                
                             i++;
+                            timeout++;
+                            if(timeout > 40){failedCRC = true;}
                         }
                         
-                        slideMsg(i + readIndex + 2 - msglen); // Modify the recChar buffer to start at the newly chosen STARTBYTE
-                        readIndex++; // As we discart everything previosu to the new STARTBYTE, making the array starting at 1 again (after start byte), the readIndex should also be reset.
+                        if(!failedCRC){
+                            slideMsg(i + readIndex + 2 - msglen); // Modify the recChar buffer to start at the newly chosen STARTBYTE
+                            readIndex++; // As we discart everything previosu to the new STARTBYTE, making the array starting at 1 again (after start byte), the readIndex should also be reset.
                         
-                        state = first_byte_received; // Make sure the function restarts at the beginning of the packet processing
-                        break;
+                            state = first_byte_received; // Make sure the function restarts at the beginning of the packet processing
+                            break;
+                        }
+                        else state = panic;
                     }
 
                     break;
@@ -288,6 +301,7 @@ void processPkt() {
         }
         messageComplete = false;
         receiveComplete = false;
+        
     }
 
 }

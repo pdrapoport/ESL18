@@ -449,7 +449,8 @@ int main(void)
 	{
 
 		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
-		receivePkt();
+		if(processPkt())
+            processRecMsg();
 
 
 		/*if (rx_queue.count) {

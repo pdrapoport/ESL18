@@ -159,7 +159,7 @@ int	rs232_getchar_nb()
 {
 	int 		result;
 	unsigned char 	c;
-		
+
 	int rv = select(fd_RS232 + 1, &set, &set, &set, &timeout);
 	if (rv == -1) {
 		perror("select");
@@ -167,7 +167,7 @@ int	rs232_getchar_nb()
 	}
 	else if (FD_ISSET(fd_RS232, &set))
 		result = 0;
-	else 
+	else
 		result = read(fd_RS232, &c, 1);
 
 	if (result == 0)
@@ -257,7 +257,7 @@ void process_key(uint8_t c)
 		case 'p':
 			payload = makePayload(PWMODE, msg);
 			break;
-		
+
 		//test case
 		case 'y':
 			msg[0] = 0x01;
@@ -289,7 +289,7 @@ void process_key(uint8_t c)
 					//arrow left, roll up
 					msg[0] = 40;
 					break;
-				
+
 				case 67:
 					//arrow right, roll down
 					msg[0] = 41;
@@ -302,7 +302,7 @@ void process_key(uint8_t c)
 			}
 			payload = makePayload(PWKB, msg);
 			break;
-		
+
 		default:
 			msg[0] = '/';
 			payload = makePayload(PWKB, msg);
@@ -325,7 +325,7 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
 	msg[5] = lowByte(pitch);
 	msg[6] = highByte(yaw);
 	msg[7] = lowByte(yaw);
-	
+
 	payload = makePayload(PWMOV, msg);
 	pc2drone(payload);
 	free(payload);
@@ -398,19 +398,22 @@ int main(int argc, char **argv)
 		if ((c = term_getchar_nb()) != -1){
 			fprintf(stderr, "char: %c\n",c);
 			process_key(c);
-			
+
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
 		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff > 1000 && absdiff > 5000) {
+		if (diff > 3000 && absdiff > 3000) {
 			gettimeofday(&tm1, NULL);
 			fprintf(stderr, "%d\n", absdiff);
-			checkJoystick();
+			//checkJoystick();
 			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
+			for(int i = 0; i < 4; ++i) {
+				axis[i]++;
+			}
 
 
-			if ((c = term_getchar_nb()) != -1) 
+			if ((c = term_getchar_nb()) != -1)
 				rs232_putchar(c);
 			}
 

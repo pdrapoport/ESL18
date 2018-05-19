@@ -22,7 +22,7 @@
 #define PWKB   0x13    //PC2Drone Keyboard Input
 
 //Length per CMD (in bytes)
-#define PWMODELEN  6   
+#define PWMODELEN  6
 #define PWMOVLEN   13
 #define DWLOGLEN   39
 #define DWMODELEN  6
@@ -42,14 +42,21 @@ typedef struct message{
     uint8_t msg[MAXMSG];
 } message_t;
 
+enum packegeStates {
+    wait, first_byte_received, receiveMsg, processMsg, CRC_Check, transmit, panic
+} packState;
+
 typedef struct payload *payload_p;
 
+int readAttempts;
 uint8_t msgId;
 uint8_t buffCount;
 uint8_t recChar[MAXMSG];
 uint8_t readIndex;
 
 uint8_t recBuff;
+
+int msglen;
 
 bool messageComplete;
 bool receiveComplete;
@@ -61,7 +68,7 @@ uint8_t cmd2len(uint8_t idCmd);
 void slideMsg(uint8_t i);
 void slideRecMsg(uint8_t i);
 message_t getPayload(uint8_t msglen);
-void processPkt();
+bool processPkt();
 bool checkCRC(uint8_t *msg, uint8_t length);
 
 #endif // MSG2PAYLOAD_H__

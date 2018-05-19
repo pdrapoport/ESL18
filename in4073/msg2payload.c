@@ -25,6 +25,7 @@ void initProtocol(){
     recBuff = 0;
 
     messageComplete = false;
+    receiveComplete = false;
 }
 
 uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
@@ -68,7 +69,8 @@ void receivePkt(){
     //read data here
     if(rx_queue.count){
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
-        recChar[buffCount] = '\0';
+        receiveComplete = true;
+        //recChar[buffCount] = '\0';
         //printf("%04x\n",recChar[buffCount-1]); // Used to detect if the message reception is not complete (and if not, to wait for it)
     }
 }
@@ -200,7 +202,7 @@ void processPkt() {
 
     if (buffCount >= MINBUFFCOUNT){ // Ensures we have already received at least 1 full message to avoid delay
 // Note: message length can also be 38, but only when flushing drone flash memory. In this case, the drone doesn't do anything else, so it doesn't matter if there is delay in the execution of this function
-        while(!messageComplete && !panic_on){
+        while(!messageComplete && !panic_on && receiveComplete){
             switch(state) {
                 case wait:
                     if (recChar[readIndex] == STARTBYTE){
@@ -285,6 +287,7 @@ void processPkt() {
             
         }
         messageComplete = false;
+        receiveComplete = false;
     }
 
 }

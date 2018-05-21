@@ -23,7 +23,6 @@ void initProtocol(){
 
     recBuff = 0;
     messageComplete = false;
-    receiveComplete = false;
     packState = wait;
 }
 
@@ -66,7 +65,7 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
 #ifdef DRONE
 void receivePkt(){
     //read data here
-    while (rx_queue.count) {
+    if (rx_queue.count) {
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
         // printf("???%02X ", recChar[buffCount - 1]);
     }

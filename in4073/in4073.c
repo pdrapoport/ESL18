@@ -17,21 +17,7 @@
 
 #define DRONE2PC
 
-enum states {
-  Safe_Mode,            // Mode 0
-  Panic_Mode,           // Mode 1
-  Manual_Mode,          // Mode 2
-  Calibration_Mode,     // Mode 3
-  Yaw_Mode,             // Mode 4
-  Full_Mode,            // Mode 5
-  Raw_Mode,             // Mode 6
-  Height_Mode,          // Mode 7
-  Wireless_Mode         // Mode 8
-} state;
-
-bool motors_off = true; // Update according to the readings
 bool no_failure = true; // Update
-bool calibration_done = false; // Update after the calibration is done
 enum states state;
 
 /*------------------------------------------------------------------
@@ -62,12 +48,6 @@ void step(enum states *state, int c) {
     // SAFE MODE
     case Safe_Mode:
         switch (c){
-            case '1':
-                *state = Panic_Mode;
-                printf("PANIC!!!!!\n");
-                panic_mode();
-                break;
-
             case '2':
                 if (motors_off && no_failure){
                     *state = Manual_Mode;
@@ -80,13 +60,7 @@ void step(enum states *state, int c) {
             if (motors_off && no_failure){
               *state = Calibration_Mode;
               printf("Calibration_Mode Selected\n");
-              calibration_mode();
-              printf("Calibration performed\n");
-              calibration_done = true; //Change after the calibration is done
-              if (motors_off && calibration_done){
-                *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-              }
+              // calibration_mode();
             }
             break;
 
@@ -138,9 +112,10 @@ void step(enum states *state, int c) {
 
       // MANUAL MODE
       case Manual_Mode:
-        if (!no_failure)
+        if (!no_failure){
           *state = Panic_Mode;
-          // Call for Panic_Mode function required
+          //panic_mode();
+        }
         else if (c == '0' && motors_off){
           *state = Safe_Mode;
           printf("Safe_Mode Selected\n");
@@ -319,6 +294,7 @@ void process_key(uint8_t c){
 			break;
 		case '1':
 			nrf_gpio_pin_toggle(RED);
+            no_failure = false;
             step(&state,'1');
 			break;
         case '2':
@@ -406,14 +382,13 @@ void changeMov(uint8_t *msg){
 	// for(j = 0; j < msglen-ADDBYTES; printf("%04x ",msg[j]),j++);
 	// printf("\n");
 	//int16_t mot1, mot2, mot3, mot4;
+
 	axis[0] = (int16_t)combineByte(msg[0], msg[1]);
 	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
-    //printf("%10ld | ", get_time_us());
-    printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
-    if (state == Manual_Mode)
-        manual_mode();
+    //printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
+
 }
 
 void changeKbParam(uint8_t *msg){
@@ -447,11 +422,21 @@ int main(void)
 	spi_flash_init();
 	ble_init();
 	initProtocol();
+    dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
+    //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
 	demo_done = false;
 	state = Safe_Mode;
-    phi_avg = 0, theta_avg = 0, psi_avg = 0;
+    sp_avg = 0;
+    sq_avg = 0;
+    sr_avg = 0;
+    sax_avg = 0;
+    say_avg = 0;
+    saz_avg = 0;
+    calibration_done = false;
+    motors_off = true;
+    //tm1 = get_time_us();
 
 	while (!demo_done)
 	{
@@ -475,21 +460,32 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
-			//printf("%10ld | ", get_time_us());
-			//printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
-			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			//printf("%6d %6d %6d | ", sp, sq, sr);
-			//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
 
+			printf("%10ld | ", get_time_us());
+			printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+			printf("%6d %6d %6d | ", phi, theta, psi);
+			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+            printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
   			clear_timer_flag();
   			//printf("cleartimerflag\n");
+
+
+            //if (state == Manual_Mode)
+            //    manual_mode();
   		}
 
   		if (check_sensor_int_flag())
   		{
+            //tm2 = get_time_us();
+            //diff = (tm2 - tm1)/ 1000;
+            //printf("%4ld \n ", diff);
+            //tm1 = tm2;
   			get_dmp_data();
-  			run_filters_and_control();
+  			run_filters_and_control(&state);
   		}
+
+
   	}
 	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);

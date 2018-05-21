@@ -30,14 +30,27 @@
 
 bool demo_done;
 
+enum states {
+  Safe_Mode,            // Mode 0
+  Panic_Mode,           // Mode 1
+  Manual_Mode,          // Mode 2
+  Calibration_Mode,     // Mode 3
+  Yaw_Mode,             // Mode 4
+  Full_Mode,            // Mode 5
+  Raw_Mode,             // Mode 6
+  Height_Mode,          // Mode 7
+  Wireless_Mode         // Mode 8
+} state;
+
 // Control
 int16_t motor[4],ae[4];
 int16_t axis[4];
-int16_t phi_avg, theta_avg, psi_avg;
+int16_t sp_avg, sq_avg, sr_avg;
+int16_t sax_avg, say_avg, saz_avg;
+bool calibration_done; // Update after the calibration is done
+bool motors_off; // Update according to the readings
 void run_filters_and_control();
-void manual_mode();
-void panic_mode();
-void calibration_mode();
+
 
 // Timers
 #define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)

@@ -373,9 +373,10 @@ void process_key(uint8_t c){
          while (readIndex < buffCount) {
              switch (packState) {
                  case wait:
-                     printf("\nWAIT!\n");
+                     //printf("\nWAIT!\n");
+                     //printf("READ %02X\n", recChar[readIndex]);
                      if (recChar[readIndex] == STARTBYTE) {
-                         printf("START\n");
+                         //printf("START\n");
                          ++readIndex;
                          packState = first_byte_received;
                      }
@@ -390,7 +391,7 @@ void process_key(uint8_t c){
                          slideMsg(1);
                          packState = wait;
                      }
-                     printf("\nFIRST!\n");
+                     //printf("\nFIRST!\n");
                      break;
                  case receiveMsg:
                      if (readIndex < msglen - 1) {
@@ -399,28 +400,35 @@ void process_key(uint8_t c){
                      else {
                          packState = CRC_Check;
                      }
-                     printf("\nRECV\n");
+                     //printf("\nRECV\n");
                      break;
                  case CRC_Check:
-                     if(checkCRC(recChar, msglen))
-                         packState = processMsg;
-                     else {
-                         printf("\nCRC FAIL!\n");
+                     if(checkCRC(recChar, msglen)) {
+                         receivedMsg[++recBuff] = getPayload(msglen);
+                         //printf("\nRECEIVED MESSAGE: ");
+                         // for (int k = 0; k < msglen; ++k) {
+                         //     printf("%02X ", recChar[k]);
+                         // }
+                         // printf("\n");
+                         processRecMsg();
+                         // if (buffCount > 13) {
+                         //     printf("oldStartByte: %02X\n", recChar[13]);
+                         // }
+                         // printf("%d/%d -> ", readIndex, buffCount);
+                         slideMsg(msglen);
+                         // printf("%d/%d\n", readIndex, buffCount);
+                         // if (buffCount > 0) {
+                         //     printf("currentStartByte: %02X\n", recChar[0]);
+                         // }
                          packState = wait;
+                     }
+                     else {
+                         //printf("\nCRC FAIL!\n");
                          slideMsg(1);
+                         packState = wait;
                      }
-                     printf("\nCRC!\n");
+                     // printf("\nCRC!\n");
                      break;
-                 case processMsg:
-                     receivedMsg[++recBuff] = getPayload(msglen);
-                     printf("\nRECEIVED MESSAGE: ");
-                     for (int k = 0; k < msglen; ++k) {
-                         printf("%02X ", recChar[k]);
-                     }
-                     printf("\n");
-                     processRecMsg();
-                     slideMsg(msglen);
-                     packState = wait;
                  case panic:
                      //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
                      //panic_on = true;
@@ -487,7 +495,7 @@ void changeMov(uint8_t *msg){
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
     //printf("%10ld | ", get_time_us());
-    printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
+    printf("ax_0 = %6d | ax_1 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
     if (state == Manual_Mode)
         manual_mode();
 }
@@ -532,7 +540,7 @@ int main(void)
 	while (!demo_done)
 	{
   		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
-  		receivePkt();
+  		processPkt();
 
   		/*if (rx_queue.count) {
   			checkMotors();
@@ -546,7 +554,7 @@ int main(void)
   			//printf("adc req\n");
   			read_baro();
   			//printf("read baro\n");
-  			processPkt();
+
   			//printf("test %d\n",i++);
   			processRecMsg();
   			//printf("processrecmsg\n");

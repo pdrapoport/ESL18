@@ -68,7 +68,7 @@ void receivePkt(){
     //read data here
     while (rx_queue.count) {
         recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
-        printf("!!! %02X ", recChar[buffCount - 1]);
+        // printf("???%02X ", recChar[buffCount - 1]);
     }
 }
 #endif
@@ -123,10 +123,17 @@ void drone2pc(uint8_t *msg){
  */
 void slideMsg(uint8_t i) {
     uint16_t count = 0;
+    //uint8_t tmp[MAXMSG];
+
     // Disable interrupts
 
-    for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
-        recChar[count-i] = recChar[count];
+    // for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
+    //     tmp[count-i] = recChar[count];
+    // }
+    // // Store the remaining characters back into recChar
+    // memcpy(recChar, tmp, MAXMSG + 1); //may cause buffer overflow according to dudes in stackoverflow
+    for (count = i; count < MAXMSG; count++) {
+        recChar[count - i] = recChar[count];
     }
 
     readIndex = 0;

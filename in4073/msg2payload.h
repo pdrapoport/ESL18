@@ -43,12 +43,11 @@ typedef struct message{
 } message_t;
 
 enum packegeStates {
-    wait, first_byte_received, receiveMsg, processMsg, CRC_Check, transmit, panic
+    wait, first_byte_received, receiveMsg, CRC_Check, transmit, panic
 } packState;
 
 typedef struct payload *payload_p;
 
-int readAttempts;
 uint8_t msgId;
 uint8_t buffCount;
 uint8_t recChar[MAXMSG];
@@ -68,7 +67,6 @@ uint8_t cmd2len(uint8_t idCmd);
 void slideMsg(uint8_t i);
 void slideRecMsg(uint8_t i);
 message_t getPayload(uint8_t msglen);
-void processPkt();
 bool checkCRC(uint8_t *msg, uint8_t length);
 
 #endif // MSG2PAYLOAD_H__

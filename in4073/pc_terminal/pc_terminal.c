@@ -408,8 +408,10 @@ int main(int argc, char **argv)
 		if (diff > 15 && absdiff > 3000) {
 			gettimeofday(&tm1, NULL);
 		//	fprintf(stderr, "diff = %d | absdiff = %d\n", diff, absdiff);
-			checkJoystick();
-
+		//	checkJoystick();
+			for (int i = 0; i < 4; ++i) {
+				axis[i]++;
+			}
 			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
 
 			if ((c = term_getchar_nb()) != -1)

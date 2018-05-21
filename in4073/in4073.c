@@ -411,7 +411,7 @@ void changeMov(uint8_t *msg){
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
     //printf("%10ld | ", get_time_us());
-    //printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
+    printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
     if (state == Manual_Mode)
         manual_mode();
 }
@@ -475,11 +475,11 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
-			printf("%10ld | ", get_time_us());
-			printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
-			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			printf("%6d %6d %6d | ", sp, sq, sr);
-			printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+			//printf("%10ld | ", get_time_us());
+			//printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
+			//printf("%6d %6d %6d | ", sp, sq, sr);
+			//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
 
   			clear_timer_flag();
   			//printf("cleartimerflag\n");

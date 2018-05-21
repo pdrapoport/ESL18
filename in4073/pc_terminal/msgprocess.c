@@ -185,105 +185,70 @@ message_t getPayload(uint8_t msglen) {
  * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
  * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
  */
-void processPkt() {
-
-    enum states {
-        wait, first_byte_received, receiveMsg, processMsg, CRC_Check, transmit, panic
-    } state;
-
-    uint8_t i, msglen = 0;
-    //uint16_t timeout; // TO BE IMPLEMENTED
-    bool crc_result = false;
-    bool panic_on = false; // Used to exit the loop in case of an emergency transition to panic mode
-    messageComplete = false;
-    state = wait;
-
-    if (buffCount >= MINBUFFCOUNT){ // Ensures we have already received at least 1 full message to avoid delay
-// Note: message length can also be 38, but only when flushing drone flash memory. In this case, the drone doesn't do anything else, so it doesn't matter if there is delay in the execution of this function
-        while(!messageComplete && !panic_on){
-            switch(state) {
-                case wait:
-                    if (recChar[readIndex] == STARTBYTE){
-                        readIndex++;
-                        state = first_byte_received;
-
-
-                    } else {
-                        slideMsg(1); //slide msg to push the unwanted byte
+bool processPkt() {
+       //uint16_t timeout; // TO BE IMPLEMENTET
+       bool crc_result = false;
+       //bool panic_on = false; // Used to exit the loop in case of an emergency transition to panic mode
+//       receivePkt();
+       while (readIndex < buffCount) {
+           switch (packState) {
+               case wait:
+                    if (recChar[readIndex] == STARTBYTE) {
+                        ++readIndex;
+                        packState = first_byte_received;
                     }
-
+                    else {
+                        slideMsg(1);
+                    }
+                    //printf("WAIT!\n");
                     break;
-
                 case first_byte_received:
                     msglen = cmd2len(recChar[readIndex++]);
-                    state = receiveMsg;
-                    if(msglen == 0){
-                        slideMsg(readIndex-1);
-                        state=wait;
+                    packState = receiveMsg;
+                    if (msglen == 0){
+                        slideMsg(1);
+                        packState = wait;
                     }
+                    //printf("FIRST!\n");
                     break;
-
-                case receiveMsg:
-                    i = 0;
-                    while(i < (msglen-3)){ // Should be a timeout somewhere in case link is broken, which makes the FSM go into panic state - TO BE IMPLEMENTED
-                        //if (recChar[readIndex++] == '\0'){
-                        // Do nothing and wait for the next packet to be received (ie loop here until the rest of the packet is received)
-                        // The infinite loop risk is (will be) taken care of by the timeout
-                        // } else {
-                        //}
-                        //move readindex to crc
-                        readIndex++;
-                        i++;
-
+                    case receiveMsg:
+                    if (readIndex < msglen - 1) {
+                        ++readIndex;
                     }
-
-                    state = CRC_Check;
+                    else {
+                        packState = CRC_Check;
+                    }
+                    //printf("RECV\n");
                     break;
-
-                case CRC_Check:
-                    crc_result = checkCRC(recChar + readIndex + 1 - msglen, msglen); //sends the recChar pointer starting from the start byte
-                                                                                     //the current readIndex is pointing at the lowByte of CRC
-                    if(crc_result == true){
-                        state = processMsg;
-                    } else {
-                        // Sliding window (search for the next STARTBYTE character, and restart the beginning of the packet prccessing)
-                        i = 0;
-                        while(recChar[i + readIndex + 2 - msglen] != STARTBYTE) { //start looking from the cmd byte
-                                                                                  //(which is the current readIndex which is pointing at the lowByte of CRC
-                                                                                  // plus 2 minus msglen to point to the cmd byte)
-
-                            i++;
+                    case CRC_Check:
+                        crc_result = checkCRC(recChar, msglen);
+                        if(crc_result)
+                            packState = processMsg;
+                        else {
+                            printf("CRC FAIL!\n");
+                            packState = wait;
+                            slideMsg(1);
                         }
-
-                        slideMsg(i + readIndex + 2 - msglen); // Modify the recChar buffer to start at the newly chosen STARTBYTE
-                        readIndex++; // As we discart everything previosu to the new STARTBYTE, making the array starting at 1 again (after start byte), the readIndex should also be reset.
-
-                        state = first_byte_received; // Make sure the function restarts at the beginning of the packet processing
+                        //printf("CRC!\n");
                         break;
-                    }
-
-                    break;
-
-                case processMsg:
-                    receivedMsg[++recBuff] = getPayload(msglen);
-
-                    messageComplete = true; // Indicate to other functions that it can run and process the command
-
-                    slideMsg(msglen); // Remove the processed packet from the queue, and make recChar start at the following byte. The interrupts are handled inside the function, preventing race conditions with newly received characters
-
-                    state = wait;
-                    break;
-
-                case panic:
-                    // Switch to panic mode - TO BE IMPLEMENTED
-                    panic_on = true; // Allows to exit the while and to go on with the panic mode
-                    break;
-
-                default:
-                    state = panic;
-            }
-
-        }
-    }
-
+                    case processMsg:
+                        receivedMsg[++recBuff] = getPayload(msglen);
+                        //printf("RECEIVED MESSAGE: ");
+                        for (int k = 0; k < msglen; ++k) {
+                            //printf("%02X ", recChar[k]);
+                        }
+                        //printf("\n");
+                        slideMsg(msglen);
+                        packState = wait;
+                        //printf("PROCESS!\n");
+                        return true;
+                    case panic:
+                        //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+                        //panic_on = true;
+                        break;
+                    default:
+                        packState = panic;
+               }
+           }
+       return false;
 }

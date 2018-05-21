@@ -355,6 +355,82 @@ void process_key(uint8_t c){
 	}
 }
 
+
+// Author: Vincent Bejach
+/* Implement the FSM defined for the communication protocol.
+ * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
+ * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
+ */
+
+
+ // Author: Vincent Bejach
+ /* Implement the FSM defined for the communication protocol.
+  * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
+  * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
+  */
+ void processPkt() {
+         receivePkt();
+         while (readIndex < buffCount) {
+             switch (packState) {
+                 case wait:
+                     printf("\nWAIT!\n");
+                     if (recChar[readIndex] == STARTBYTE) {
+                         printf("START\n");
+                         ++readIndex;
+                         packState = first_byte_received;
+                     }
+                     else {
+                         slideMsg(1);
+                     }
+                     break;
+                 case first_byte_received:
+                     msglen = cmd2len(recChar[readIndex++]);
+                     packState = receiveMsg;
+                     if (msglen == 0){
+                         slideMsg(1);
+                         packState = wait;
+                     }
+                     printf("\nFIRST!\n");
+                     break;
+                 case receiveMsg:
+                     if (readIndex < msglen - 1) {
+                         ++readIndex;
+                     }
+                     else {
+                         packState = CRC_Check;
+                     }
+                     printf("\nRECV\n");
+                     break;
+                 case CRC_Check:
+                     if(checkCRC(recChar, msglen))
+                         packState = processMsg;
+                     else {
+                         printf("\nCRC FAIL!\n");
+                         packState = wait;
+                         slideMsg(1);
+                     }
+                     printf("\nCRC!\n");
+                     break;
+                 case processMsg:
+                     receivedMsg[++recBuff] = getPayload(msglen);
+                     printf("\nRECEIVED MESSAGE: ");
+                     for (int k = 0; k < msglen; ++k) {
+                         printf("%02X ", recChar[k]);
+                     }
+                     printf("\n");
+                     processRecMsg();
+                     slideMsg(msglen);
+                     packState = wait;
+                 case panic:
+                     //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+                     //panic_on = true;
+                     break;
+                 default:
+                     packState = panic;
+             }
+         }
+ }
+
 void processRecMsg(){
 	if(recBuff != 0){
 		uint8_t idCmd = receivedMsg[1].idCmd;

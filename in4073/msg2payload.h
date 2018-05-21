@@ -68,7 +68,7 @@ uint8_t cmd2len(uint8_t idCmd);
 void slideMsg(uint8_t i);
 void slideRecMsg(uint8_t i);
 message_t getPayload(uint8_t msglen);
-bool processPkt();
+void processPkt();
 bool checkCRC(uint8_t *msg, uint8_t length);
 
 #endif // MSG2PAYLOAD_H__

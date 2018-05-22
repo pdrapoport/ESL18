@@ -232,6 +232,10 @@ void process_key(uint8_t c)
 		case 'b': //motor 2 down
 		case 'h': //motor 3 up
 		case 'n': //motor 4 down
+		case 'm': //b constant up
+		case ',': //b constant down
+		case '.': //d constant up
+		case '/': //d constant down
 
 		//lift, roll, pitch, yaw control
 		case 'a': //lift up
@@ -416,7 +420,10 @@ int main(int argc, char **argv)
 			checkJoystick();
 
 			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
-			//sendLRPY(100, 200, 300, 400);
+			// for (int i = 0; i < 4; ++i) {
+			// 	axis[i]++;
+			// }
+			// sendLRPY(axis[0], axis[1], axis[2], axis[3]);
 
 			//if ((c = term_getchar_nb()) != -1)
 			//	rs232_putchar(c);

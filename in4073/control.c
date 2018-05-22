@@ -13,8 +13,6 @@
 #include "in4073.h"
 #include "math.h"
 
-int b = 1;
-int d = 1;
 
 //Variables for calibration
 int16_t sp_array[64], sq_array[64], sr_array[64];

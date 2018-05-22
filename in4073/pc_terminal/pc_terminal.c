@@ -227,7 +227,7 @@ void process_joystick(uint8_t but){
 		case 1:
 			msg[0] = '0';
 			break;
-		case 2: 
+		case 2:
 			msg[0] = '3';
 			break;
 		case 6:
@@ -458,13 +458,12 @@ int main(int argc, char **argv)
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			checkJoystick();
+			//axis[3] = -15000;
+			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
 
-			sendLRPY(axis[0], axis[1], axis[2], ((-1) * axis[3] / 2) + 16384);
-			// for (int i = 0; i < 4; ++i) {
+			//printf()			// for (int i = 0; i < 4; ++i) {
 			// 	axis[i]++;
 			// }
-			// sendLRPY(axis[0], axis[1], axis[2], axis[3]);
-
 			//if ((c = term_getchar_nb()) != -1)
 			//	rs232_putchar(c);
 		}

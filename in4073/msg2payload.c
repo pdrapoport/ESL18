@@ -16,6 +16,7 @@
 #include "msg2payload.h"
 #include <stdlib.h>
 #include <string.h>
+
 void initProtocol(){
     msgId = 0;
     buffCount = 0;
@@ -23,6 +24,8 @@ void initProtocol(){
     b = 1;
     d = 10;
     p = 10;
+    p1 = 10;
+    p2 = 10;
 
     recBuff = 0;
     messageComplete = false;

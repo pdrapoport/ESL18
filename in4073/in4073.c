@@ -275,12 +275,12 @@ void process_key(uint8_t c){
 			break;
 		case 'u':
 			//yaw control p up
-            p++;
+            p+=10;
 			break;
 		case 'j':
 			//yaw control p down
-            if (p > 1)
-                p--;
+            if (p > 10)
+                p-=10;
 			break;
 		case 'i':
 			//roll, pitch control p1 up
@@ -562,7 +562,7 @@ int main(void)
 
 			printf("%10ld | %2d | ", get_time_us(), state);
 			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
-			printf("%6d %6d %6d | ", phi, theta, psi);
+			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
 			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
             printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
 			printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);

@@ -108,7 +108,7 @@ void rs232_open(void)
   	int 		result;
   	struct termios	tty;
 
-       	fd_RS232 = open("/dev/ESLBOARD", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
 				printf("%d\n",fd_RS232);
 	assert(fd_RS232>=0);
 
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
 	term_puts("\nConnecting joystick...\n");
 
 
-	if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
+	if ((js_fd = open(JS_DEV, O_RDONLY)) < 0) {
 		term_puts("\nFailed to connect joystick\n");
 		//exit(1);
 	}

@@ -21,14 +21,7 @@ void initProtocol(){
     msgId = 0;
     buffCount = 0;
     readIndex = 0;
-    b = 1;
-    d = 10;
-    p = 10;
-    p1 = 10;
-    p2 = 10;
-
     recBuff = 0;
-    messageComplete = false;
     packState = wait;
 }
 

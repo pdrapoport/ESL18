@@ -41,6 +41,10 @@ void run_filters_and_control(enum states *state){
 			pitch = axis[1]*30; //M pitch
 			yaw = axis[2]*30; //N yaw
 			lift = axis[3]*30; //Z lift
+
+			//check if input is nonzero, if yes, change motors_off variable accordingly
+			if(roll && pitch && yaw && lift) motors_off = false;
+			else motors_off = true;
 			break;
 		case Calibration_Mode:
 			sp_sum += sp;
@@ -86,25 +90,51 @@ void run_filters_and_control(enum states *state){
 			pitch = axis[1]*30;
 			yaw = p * (axis[2]*30 - (sr-sr_avg));
 			lift = axis[3]*30;
+			//check if input is nonzero, if yes, change motors_off variable accordingly
+			if(roll && pitch && yaw && lift) motors_off = false;
+			else motors_off = true;
 			break;
 		case Full_Mode:
 			pitch = p2 * (p1 * (axis[1]*30 - (theta-theta_avg)) - (sq-sq_avg));
 			roll = p2 * (p1 * (axis[0]*30 - (phi-phi_avg)) - (sp-sp_avg));
 			yaw = p * (axis[2]*30 - (sr-sr_avg));
 			lift = axis[3]*30;
+			//check if input is nonzero, if yes, change motors_off variable accordingly
+			if(roll && pitch && yaw && lift) motors_off = false;
+			else motors_off = true;
 			break;
 		case Raw_Mode:
+			//insert control here
+
+			//check if input is nonzero, if yes, change motors_off variable accordingly
+			if(roll && pitch && yaw && lift) motors_off = false;
+			else motors_off = true;
 			break;
 		case Height_Mode:
+			//insert control here
+			
+			//check if input is nonzero, if yes, change motors_off variable accordingly
+			if(roll && pitch && yaw && lift) motors_off = false;
+			else motors_off = true;
 			break;
 		case Wireless_Mode:
+			//insert control here
+			
+			//check if input is nonzero, if yes, change motors_off variable accordingly
+			if(roll && pitch && yaw && lift) motors_off = false;
+			else motors_off = true;
 			break;
 		case Panic_Mode:
-			for (int j = 0; j<4; j++){
-				ae[j] -= 1;
-				if (ae[j] <= 0)
-					ae[j] = 0;
+			; //to avoid the static int below case
+			static int k = 0;
+			if(k++ % 10 == 0){
+				for (int j = 0; j<4; j++){
+					ae[j] -= 1;
+					if (ae[j] <= 0)
+						ae[j] = 0;
+				}
 			}
+			if(!ae[0] && !ae[1] && !ae[2] && !ae[3]) {no_failure = true;motors_off = true;}
 			break;
 	}
 

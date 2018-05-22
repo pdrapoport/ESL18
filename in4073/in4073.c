@@ -17,8 +17,27 @@
 
 #define DRONE2PC
 
-bool no_failure = true; // Update
 enum states state;
+
+void initValues(){
+  b = 1;
+  d = 10;
+  p = 10;
+  p1 = 10;
+  p2 = 10;
+
+  demo_done = false;
+	state = Safe_Mode;
+  sp_avg = 0;
+  sq_avg = 0;
+  sr_avg = 0;
+  sax_avg = 0;
+  say_avg = 0;
+  saz_avg = 0;
+  motors_off = true;
+  calibration_done = false;
+  no_failure = true;
+}
 
 /*------------------------------------------------------------------
  * FSM FCB
@@ -275,12 +294,12 @@ void process_key(uint8_t c){
 			break;
 		case 'u':
 			//yaw control p up
-            p+=10;
+      p+=10;
 			break;
 		case 'j':
 			//yaw control p down
-            if (p > 10)
-                p-=10;
+      if (p > 10)
+      p-=10;
 			break;
 		case 'i':
 			//roll, pitch control p1 up
@@ -309,42 +328,44 @@ void process_key(uint8_t c){
 		case 27:
 			demo_done = true;
 			break;
+
+    //modes
 		case '1':
 			nrf_gpio_pin_toggle(RED);
-            no_failure = false;
-            step(&state,'1');
+      no_failure = false;
+      step(&state,'1');
 			break;
-        case '2':
-            step(&state,'2');
-            break;
-        case '3':
-            step(&state,'3');
-            break;
-        case '4':
-            step(&state,'4');
-            break;
-        case '5':
-            step(&state,'5');
-            break;
-        case '6':
-            step(&state,'6');
-            break;
-        case '7':
-            step(&state,'7');
-            break;
-        case '8':
-            step(&state,'8');
-            break;
-        case '0':
-            step(&state,'0');
-            printf("Go to safe mode\n");
-            break;
-        case 'p':
-            printf("%s\n",getCurrentState(state));
-            break;
-        default:
-            nrf_gpio_pin_toggle(RED);
-            break;
+    case '2':
+      step(&state,'2');
+      break;
+    case '3':
+      step(&state,'3');
+      break;
+    case '4':
+      step(&state,'4');
+      break;
+    case '5':
+      step(&state,'5');
+      break;
+    case '6':
+      step(&state,'6');
+      break;
+    case '7':
+      step(&state,'7');
+      break;
+    case '8':
+      step(&state,'8');
+      break;
+    case '0':
+      step(&state,'0');
+      printf("Go to safe mode\n");
+      break;
+    case 'p':
+      printf("%s\n",getCurrentState(state));
+      break;
+    default:
+      nrf_gpio_pin_toggle(RED);
+      break;
 	}
 }
 
@@ -362,75 +383,75 @@ void process_key(uint8_t c){
   * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
   */
  void processPkt() {
-         receivePkt();
-         while (readIndex < buffCount) {
-             switch (packState) {
-                 case wait:
-                     //printf("\nWAIT!\n");
-                     //printf("READ %02X\n", recChar[readIndex]);
-                     if (recChar[readIndex] == STARTBYTE) {
-                         //printf("START\n");
-                         ++readIndex;
-                         packState = first_byte_received;
-                     }
-                     else {
-                         slideMsg(1);
-                     }
-                     break;
-                 case first_byte_received:
-                     msglen = cmd2len(recChar[readIndex++]);
-                     packState = receiveMsg;
-                     if (msglen == 0){
-                         slideMsg(1);
-                         packState = wait;
-                     }
-                     //printf("\nFIRST!\n");
-                     break;
-                 case receiveMsg:
-                     if (readIndex < msglen - 1) {
-                         ++readIndex;
-                     }
-                     else {
-                         packState = CRC_Check;
-                     }
-                     //printf("\nRECV\n");
-                     break;
-                 case CRC_Check:
-                     if(checkCRC(recChar, msglen)) {
-                         receivedMsg[++recBuff] = getPayload(msglen);
-                         //printf("\nRECEIVED MESSAGE: ");
-                         // for (int k = 0; k < msglen; ++k) {
-                         //     printf("%02X ", recChar[k]);
-                         // }
-                         // printf("\n");
-                         processRecMsg();
-                         // if (buffCount > 13) {
-                         //     printf("oldStartByte: %02X\n", recChar[13]);
-                         // }
-                         // printf("%d/%d -> ", readIndex, buffCount);
-                         slideMsg(msglen);
-                         // printf("%d/%d\n", readIndex, buffCount);
-                         // if (buffCount > 0) {
-                         //     printf("currentStartByte: %02X\n", recChar[0]);
-                         // }
-                         packState = wait;
-                     }
-                     else {
-                         //printf("\nCRC FAIL!\n");
-                         slideMsg(1);
-                         packState = wait;
-                     }
-                     // printf("\nCRC!\n");
-                     break;
-                 case panic:
-                     //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
-                     //panic_on = true;
-                     break;
-                 default:
-                     packState = panic;
-             }
-         }
- }
+  receivePkt();
+  while (readIndex < buffCount) {
+    switch (packState) {
+      case wait:
+        //printf("\nWAIT!\n");
+        //printf("READ %02X\n", recChar[readIndex]);
+        if (recChar[readIndex] == STARTBYTE) {
+          //printf("START\n");
+          ++readIndex;
+          packState = first_byte_received;
+        }
+        else {
+          slideMsg(1);
+        }
+        break;
+      case first_byte_received:
+        msglen = cmd2len(recChar[readIndex++]);
+        packState = receiveMsg;
+        if (msglen == 0) {
+          slideMsg(1);
+          packState = wait;
+        }
+        //printf("\nFIRST!\n");
+        break;
+      case receiveMsg:
+        if (readIndex < msglen - 1) {
+          ++readIndex;
+        }
+        else {
+          packState = CRC_Check;
+        }
+        //printf("\nRECV\n");
+        break;
+      case CRC_Check:
+        if (checkCRC(recChar, msglen)) {
+          receivedMsg[++recBuff] = getPayload(msglen);
+          //printf("\nRECEIVED MESSAGE: ");
+          // for (int k = 0; k < msglen; ++k) {
+          //     printf("%02X ", recChar[k]);
+          // }
+          // printf("\n");
+          processRecMsg();
+          // if (buffCount > 13) {
+          //     printf("oldStartByte: %02X\n", recChar[13]);
+          // }
+          // printf("%d/%d -> ", readIndex, buffCount);
+          slideMsg(msglen);
+          // printf("%d/%d\n", readIndex, buffCount);
+          // if (buffCount > 0) {
+          //     printf("currentStartByte: %02X\n", recChar[0]);
+          // }
+          packState = wait;
+        }
+        else {
+          //printf("\nCRC FAIL!\n");
+          slideMsg(1);
+          packState = wait;
+        }
+        // printf("\nCRC!\n");
+        break;
+      case panic:
+        //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+        //panic_on = true;
+        break;
+      default:
+        packState = panic;
+    }
+  }
+}
 
 void processRecMsg(){
 	if(recBuff != 0){
@@ -521,20 +542,12 @@ int main(void)
 	spi_flash_init();
 	ble_init();
 	initProtocol();
-    dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+  initValues();
+  dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
-	demo_done = false;
-	state = Safe_Mode;
-    sp_avg = 0;
-    sq_avg = 0;
-    sr_avg = 0;
-    sax_avg = 0;
-    say_avg = 0;
-    saz_avg = 0;
-    calibration_done = false;
-    motors_off = true;
+	
     //tm1 = get_time_us();
 
 	while (!demo_done)

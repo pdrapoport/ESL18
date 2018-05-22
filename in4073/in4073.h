@@ -51,7 +51,9 @@ int16_t phi_avg, theta_avg, psi_avg;
 bool calibration_done; // Update after the calibration is done
 bool motors_off; // Update according to the readings
 void run_filters_and_control();
+void initValues();
 int b, d, p, p1, p2;
+bool no_failure;
 
 
 // Timers

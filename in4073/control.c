@@ -28,6 +28,10 @@ void update_motors(void)
 	motor[1] = ae[1];
 	motor[2] = ae[2];
 	motor[3] = ae[3];
+	//if any motor output is nonzero, the motors are on (motors_off=false)
+	//if all the motor output is zero, the motors are off (motors_off=true)
+	if(motor[0] || motor[1] || motor[2] || motor[3]) motors_off = false;
+	else if(!motor[0] && !motor[1] && !motor[2] && !motor[3]) motors_off = true;
 }
 
 void run_filters_and_control(enum states *state){
@@ -36,16 +40,14 @@ void run_filters_and_control(enum states *state){
 	switch (*state) {
     	case Safe_Mode:
 	  		break;
+
 		case Manual_Mode:
 			roll = axis[0]*30; //L roll
 			pitch = axis[1]*30; //M pitch
 			yaw = axis[2]*30; //N yaw
 			lift = axis[3]*30; //Z lift
-
-			//check if input is nonzero, if yes, change motors_off variable accordingly
-			if(roll && pitch && yaw && lift) motors_off = false;
-			else motors_off = true;
 			break;
+
 		case Calibration_Mode:
 			sp_sum += sp;
 			sq_sum += sq;
@@ -85,45 +87,33 @@ void run_filters_and_control(enum states *state){
 				}
 			}
 			break;
+
 		case Yaw_Mode:
 			roll = axis[0]*30;
 			pitch = axis[1]*30;
 			yaw = p * (axis[2]*30 - (sr-sr_avg));
 			lift = axis[3]*30;
-			//check if input is nonzero, if yes, change motors_off variable accordingly
-			if(roll && pitch && yaw && lift) motors_off = false;
-			else motors_off = true;
 			break;
+
 		case Full_Mode:
 			pitch = p2 * (p1 * (axis[1]*30 - (theta-theta_avg)) - (sq-sq_avg));
 			roll = p2 * (p1 * (axis[0]*30 - (phi-phi_avg)) - (sp-sp_avg));
 			yaw = p * (axis[2]*30 - (sr-sr_avg));
 			lift = axis[3]*30;
-			//check if input is nonzero, if yes, change motors_off variable accordingly
-			if(roll && pitch && yaw && lift) motors_off = false;
-			else motors_off = true;
 			break;
+
 		case Raw_Mode:
 			//insert control here
-
-			//check if input is nonzero, if yes, change motors_off variable accordingly
-			if(roll && pitch && yaw && lift) motors_off = false;
-			else motors_off = true;
 			break;
+
 		case Height_Mode:
 			//insert control here
-			
-			//check if input is nonzero, if yes, change motors_off variable accordingly
-			if(roll && pitch && yaw && lift) motors_off = false;
-			else motors_off = true;
 			break;
+
 		case Wireless_Mode:
 			//insert control here
-			
-			//check if input is nonzero, if yes, change motors_off variable accordingly
-			if(roll && pitch && yaw && lift) motors_off = false;
-			else motors_off = true;
 			break;
+
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
@@ -134,7 +124,8 @@ void run_filters_and_control(enum states *state){
 						ae[j] = 0;
 				}
 			}
-			if(!ae[0] && !ae[1] && !ae[2] && !ae[3]) {no_failure = true;motors_off = true;}
+			//check if the motor has turned off
+			if(!motor[0] && !motor[1] && !motor[2] && !motor[3]) {no_failure = true;motors_off = true;}
 			break;
 	}
 

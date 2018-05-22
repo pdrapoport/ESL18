@@ -76,7 +76,7 @@ void run_filters_and_control(enum states *state){
 			roll = axis[0]; //L roll
 			pitch = axis[1]; //M pitch
 			lift = axis[3]; //Z lift
-			yaw = 5 * (axis[2] - sr);
+			yaw = p * (5 * axis[2] - sr);
 			break;
 		case Full_Mode:
 			break;
@@ -105,11 +105,11 @@ void run_filters_and_control(enum states *state){
 			ae[i] = ae[i]*4; //Scaling Factor
 			if (ae[i] >= 500)
 				ae[i] = 500;
-			else if (ae[i] <= 0)
-				ae[i] = 0;
+			else if (lift > 5910 && ae[i] <= 152)
+				ae[i] = 152;
 		}
 
 		//printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);
-		//update_motors();
 	}
+	update_motors();
 }

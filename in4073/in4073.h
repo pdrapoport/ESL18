@@ -50,6 +50,7 @@ int16_t sax_avg, say_avg, saz_avg;
 bool calibration_done; // Update after the calibration is done
 bool motors_off; // Update according to the readings
 void run_filters_and_control();
+int b, d, p;
 
 
 // Timers

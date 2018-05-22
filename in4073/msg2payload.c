@@ -21,7 +21,8 @@ void initProtocol(){
     buffCount = 0;
     readIndex = 0;
     b = 1;
-    d = 1;
+    d = 10;
+    p = 10;
 
     recBuff = 0;
     messageComplete = false;

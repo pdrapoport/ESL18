@@ -257,7 +257,7 @@ void process_key(uint8_t c){
       break;
     case '/':
       b--;
-      if(b < 1) d = 1;
+      if(b < 1) b = 1;
       break;
 
 		//lift, roll, pitch, yaw control
@@ -275,9 +275,12 @@ void process_key(uint8_t c){
 			break;
 		case 'u':
 			//yaw control p up
+            p++;
 			break;
 		case 'j':
 			//yaw control p down
+            if (p > 1)
+                p--;
 			break;
 		case 'i':
 			//roll, pitch control p1 up
@@ -485,8 +488,6 @@ void changeMov(uint8_t *msg){
 	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
-    //printf("ax_0 = %6d | ax_2 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
-
 }
 
 void changeKbParam(uint8_t *msg){
@@ -559,12 +560,12 @@ int main(void)
   			//printf("processrecmsg\n");
 
 
-			printf("%10ld | ", get_time_us());
-			printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+			printf("%10ld | %2d | ", get_time_us(), state);
+			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
 			printf("%6d %6d %6d | ", phi, theta, psi);
 			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
             printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+			printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
   			clear_timer_flag();
   			//printf("cleartimerflag\n");
 

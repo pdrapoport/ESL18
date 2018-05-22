@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			checkJoystick();
 
-			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
+			sendLRPY(axis[0], axis[1], axis[2], ((-1) * axis[3] / 2) + 16384);
 			// for (int i = 0; i < 4; ++i) {
 			// 	axis[i]++;
 			// }

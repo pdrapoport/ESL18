@@ -230,6 +230,10 @@ void process_key(uint8_t c)
 		case 'b': //motor 2 down
 		case 'h': //motor 3 up
 		case 'n': //motor 4 down
+		case 'm': //b constant up
+		case ',': //b constant down
+		case '.': //d constant up
+		case '/': //d constant down
 
 		//lift, roll, pitch, yaw control
 		case 'a': //lift up

@@ -38,6 +38,7 @@ void run_filters_and_control();
 void manual_mode();
 void panic_mode();
 void calibration_mode();
+int b, d;
 
 // Timers
 #define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)

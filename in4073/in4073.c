@@ -270,6 +270,20 @@ void process_key(uint8_t c){
 			ae[3] -= 10;
 			if (ae[3] < 0) ae[3] = 0;
 			break;
+    case 'm':
+      d++;
+      break;
+    case ',':
+      d--;
+      if(d < 1) d = 1;
+      break;
+    case '.':
+      b++;
+      break;
+    case '/':
+      b--;
+      if(b < 1) d = 1;
+      break;
 
 		//lift, roll, pitch, yaw control
 		case 'a':

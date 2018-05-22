@@ -12,8 +12,6 @@
 
 #include "in4073.h"
 
-int b = 1;
-int d = 1;
 
 int find_sqrt(int arg) {
 	int result = 200;

@@ -47,10 +47,13 @@ int16_t motor[4],ae[4];
 int16_t axis[4];
 int16_t sp_avg, sq_avg, sr_avg;
 int16_t sax_avg, say_avg, saz_avg;
+int16_t phi_avg, theta_avg, psi_avg;
 bool calibration_done; // Update after the calibration is done
 bool motors_off; // Update according to the readings
 void run_filters_and_control();
-int b, d, p;
+void initValues();
+int b, d, p, p1, p2;
+bool no_failure;
 
 
 // Timers

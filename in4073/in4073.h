@@ -20,6 +20,7 @@
 #include "ml.h"
 #include "app_util_platform.h"
 #include <math.h>
+#include "msg2payload.h"
 
 #define RED		22
 #define YELLOW		24
@@ -29,12 +30,34 @@
 
 bool demo_done;
 
+enum states {
+  Safe_Mode,            // Mode 0
+  Panic_Mode,           // Mode 1
+  Manual_Mode,          // Mode 2
+  Calibration_Mode,     // Mode 3
+  Yaw_Mode,             // Mode 4
+  Full_Mode,            // Mode 5
+  Raw_Mode,             // Mode 6
+  Height_Mode,          // Mode 7
+  Wireless_Mode         // Mode 8
+} state;
+
 // Control
 int16_t motor[4],ae[4];
+int16_t axis[4];
+int16_t sp_avg, sq_avg, sr_avg;
+int16_t sax_avg, say_avg, saz_avg;
+int16_t phi_avg, theta_avg, psi_avg;
+bool calibration_done; // Update after the calibration is done
+bool motors_off; // Update according to the readings
 void run_filters_and_control();
+void initValues();
+int b, d, p, p1, p2;
+bool no_failure;
+
 
 // Timers
-#define TIMER_PERIOD	50 //50ms=20Hz (MAX 23bit, 4.6h)
+#define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)
 void timers_init(void);
 uint32_t get_time_us(void);
 bool check_timer_flag(void);
@@ -48,11 +71,12 @@ void gpio_init(void);
 typedef struct {
 	uint8_t Data[QUEUE_SIZE];
 	uint16_t first,last;
-  	uint16_t count; 
+  	uint16_t count;
 } queue;
 void init_queue(queue *q);
 void enqueue(queue *q, char x);
 char dequeue(queue *q);
+void processPkt();
 
 // UART
 #define RX_PIN_NUMBER  16
@@ -106,5 +130,12 @@ queue ble_tx_queue;
 volatile bool radio_active;
 void ble_init(void);
 void ble_send(void);
+
+// PROCESSING
+void process_key(uint8_t c);
+void processRecMsg();
+void changeMode();
+void changeMov(uint8_t *msg);
+void changeKbParam(uint8_t *msg);
 
 #endif // IN4073_H__

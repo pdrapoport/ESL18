@@ -152,86 +152,6 @@ void step(enum states *state, int c) {
             }
             break;
 
-        // FULL MODE
-        case Full_Mode:
-            if (!no_failure){
-                *state = Panic_Mode;
-                printf("Panic_Mode Selected\n");
-            }
-            else if (c == '0' && motors_off){
-                *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-            }
-            else{
-                printf("No mode selected\n");
-            }
-            break;
-
-        // RAW MODE
-        case Raw_Mode:
-            if (!no_failure){
-                *state = Panic_Mode;
-                printf("Panic_Mode Selected\n");
-            }
-            else if (c == '0' && motors_off){
-                *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-            }
-            else{
-                printf("No mode selected\n");
-            }
-            break;
-
-        // HEIGHT MODE
-        case Height_Mode:
-            if (!no_failure){
-                *state = Panic_Mode;
-                printf("Panic_Mode Selected\n");
-            }
-            else if (c == '0' && motors_off){
-                *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-            }
-            else{
-                printf("No mode selected\n");
-            }
-            break;
-
-        // WIRELESS MODE
-        case Wireless_Mode:
-            if (!no_failure){
-                *state = Panic_Mode;
-                printf("Panic_Mode Selected\n");
-            }
-            else if (c == '0' && motors_off){
-                *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-            }
-            else{
-                printf("No mode selected\n");
-            }
-            break;
-
-        // PANIC MODE
-        case Panic_Mode:
-            if (no_failure && motors_off && c == '0'){
-                *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-            }
-            else{
-                printf("No mode selected\n");
-            }
-            break;
-
-        // CALIBRATION MODE
-        case Calibration_Mode:
-            break;
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
       // FULL MODE
       case Full_Mode:
         if (!no_failure)
@@ -245,6 +165,7 @@ void step(enum states *state, int c) {
         else{
           printf("No mode selected\n");
         }
+        break;
 
       // RAW MODE
       case Raw_Mode:

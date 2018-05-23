@@ -27,6 +27,10 @@ void update_motors(void)
 	motor[1] = ae[1];
 	motor[2] = ae[2];
 	motor[3] = ae[3];
+	motors_off = true;
+	for (int i = 0; i < 4; ++i) {
+		motors_off &= (motor[i] == 0);
+	}
 }
 
 void run_filters_and_control(enum states *state){
@@ -95,7 +99,7 @@ void run_filters_and_control(enum states *state){
 			break;
 	}
 
-	if (*state != Panic_Mode){
+	if (*state != Panic_Mode){ 
 		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
 		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
 		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C

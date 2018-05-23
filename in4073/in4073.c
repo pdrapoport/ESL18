@@ -202,6 +202,8 @@ void step(enum states *state, int c) {
         break;
 
 	case Panic_Mode:
+      if (c == '0' && motors_off && ((bat_volt > 1110) || (bat_volt < 650)))
+        *state = Safe_Mode;
 	  break;
 
 	case Calibration_Mode:
@@ -551,6 +553,9 @@ int main(void)
   			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
   			adc_request_sample();
+            if (bat_volt < 500) {
+                state = Panic_Mode;
+            }
   			//printf("adc req\n");
   			read_baro();
   			//printf("read baro\n");

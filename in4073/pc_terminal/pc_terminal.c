@@ -97,7 +97,10 @@ int	term_getchar()
 int serial_device = 0;
 int fd_RS232, js_fd;
 fd_set set;
-short axis[4];
+struct js_event	js;
+
+int axis[6];
+int button[12];
 struct timeval timeout;
 
 void rs232_open(void)
@@ -130,7 +133,7 @@ void rs232_open(void)
 	cfsetispeed(&tty, B115200);
 
 	tty.c_cc[VMIN]  = 0;
-	tty.c_cc[VTIME] = 1; // added timeout
+	tty.c_cc[VTIME] = 0; // added timeout //0 for NON-BLOCKING MODE but a lot of keys are missed by the protocol
 
 	tty.c_iflag &= ~(IXON|IXOFF|IXANY);
 
@@ -212,6 +215,43 @@ int pc2drone(uint8_t *msg){
 
 	assert(result == msglen);
 	return result;
+}
+
+void process_joystick(uint8_t but){
+	uint8_t msg[PWKBLEN - ADDBYTES];
+	uint8_t *payload;
+	switch(but){
+		case 0:
+			msg[0] = '1';
+			break;
+		case 1:
+			msg[0] = '0';
+			break;
+		case 2:
+			msg[0] = '3';
+			break;
+		case 6:
+			msg[0] = '2';
+			break;
+		case 7:
+			msg[0] = '4';
+			break;
+		case 8:
+			msg[0] = '5';
+			break;
+		case 9:
+			msg[0] = '6';
+			break;
+		case 10:
+			msg[0] = '7';
+			break;
+		case 11:
+			msg[0] = '8';
+			break;
+	}
+	payload = makePayload(PWKB, msg);
+	pc2drone(payload);
+	free(payload);
 }
 
 void process_key(uint8_t c)
@@ -336,27 +376,29 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
 	free(payload);
 }
 
+void checkJoystick() {
+	while (read(js_fd,&js,sizeof(struct js_event)) ==
+		   sizeof(struct js_event))  {
+		switch(js.type & ~JS_EVENT_INIT) {
+			case JS_EVENT_BUTTON:
+				button[js.number] = js.value;
+				if(button[js.number] == 1) process_joystick(js.number);
+				break;
+			case JS_EVENT_AXIS:
+				axis[js.number] = js.value;
+				break;
+		}
+		//if (errno != EAGAIN) {
+		//	perror("\njs: error reading (EAGAIN)");
+		//	exit (1);
+		//}
+}
+}
+
 /*----------------------------------------------------------------
  * main -- execute terminal
  *----------------------------------------------------------------
  */
-void checkJoystick() {
-	struct js_event	js;
-	while (read(js_fd, &js, sizeof(struct js_event)) ==
-        		sizeof(struct js_event))  {
-		switch(js.type & ~JS_EVENT_INIT) {
-			case JS_EVENT_BUTTON:
-				if (js.value) {
-					//TODO: send command for this button to FCB
-				}
-				break;
-			case JS_EVENT_AXIS:
-			//if (js.number < 4)
-				axis[js.number] = js.value;
-			break;
-		}
-	}
-}
 
 int main(int argc, char **argv)
 {
@@ -365,6 +407,7 @@ int main(int argc, char **argv)
 	struct timeval	tm1, tm2;
 	long long diff;
 	long long absdiff;
+	bool exit = false;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
@@ -381,7 +424,8 @@ int main(int argc, char **argv)
 	term_puts("\nConnecting joystick...\n");
 
 
-	if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
+	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
+	if ((js_fd = open(JS_DEV, O_RDONLY)) < 0) {
 		term_puts("\nFailed to connect joystick\n");
 		//exit(1);
 	}
@@ -404,30 +448,30 @@ int main(int argc, char **argv)
 		if ((c = term_getchar_nb()) != -1){
 			fprintf(stderr, "char: %c\n",c);
 			process_key(c);
-
+			if (c == 'e')
+				exit = true;
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
 		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff > 15 && absdiff > 3000) {
+		if (diff >= 15 && absdiff >= 3000) {
 			gettimeofday(&tm1, NULL);
-		//	fprintf(stderr, "diff = %d | absdiff = %d\n", diff, absdiff);
-		//	checkJoystick();
-			for (int i = 0; i < 4; ++i) {
-				axis[i]++;
-			}
-			sendLRPY(axis[0], axis[1], axis[2], axis[3]);
-			// for (int i = 0; i < 4; ++i) {
+			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
+			//checkJoystick();
+			axis[3] = 32768;
+			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
+
+			//printf()			// for (int i = 0; i < 4; ++i) {
 			// 	axis[i]++;
 			// }
-			// sendLRPY(axis[0], axis[1], axis[2], axis[3]);
-
-			if ((c = term_getchar_nb()) != -1)
-				rs232_putchar(c);
-			}
+			//if ((c = term_getchar_nb()) != -1)
+			//	rs232_putchar(c);
+		}
 
 		if ((c = rs232_getchar_nb()) != -1)
 			term_putchar(c);
+		if (exit)
+			break;
 	}
 
 	term_exitio();

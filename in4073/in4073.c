@@ -17,22 +17,27 @@
 
 #define DRONE2PC
 
-enum states {
-  Safe_Mode,            // Mode 0
-  Panic_Mode,           // Mode 1
-  Manual_Mode,          // Mode 2
-  Calibration_Mode,     // Mode 3
-  Yaw_Mode,             // Mode 4
-  Full_Mode,            // Mode 5
-  Raw_Mode,             // Mode 6
-  Height_Mode,          // Mode 7
-  Wireless_Mode         // Mode 8
-} state;
-
-bool motors_off = true; // Update according to the readings
-bool no_failure = true; // Update
-bool calibration_done = false; // Update after the calibration is done
 enum states state;
+
+void initValues(){
+  b = 1;
+  d = 10;
+  p = 10;
+  p1 = 10;
+  p2 = 10;
+
+  demo_done = false;
+	state = Safe_Mode;
+  sp_avg = 0;
+  sq_avg = 0;
+  sr_avg = 0;
+  sax_avg = 0;
+  say_avg = 0;
+  saz_avg = 0;
+  motors_off = true;
+  calibration_done = false;
+  no_failure = true;
+}
 
 /*------------------------------------------------------------------
  * FSM FCB
@@ -57,109 +62,170 @@ const char* getCurrentState(enum states state)
 }
 
 void step(enum states *state, int c) {
-  switch (*state) {
+    switch (*state) {
+        // SAFE MODE
+        case Safe_Mode:
+            no_failure = true;
+            switch (c){
+                case '2':
+                    if (motors_off && no_failure){
+                        *state = Manual_Mode;
+                        printf("Manual_Mode Selected\n");
+                    }
+                    break;
 
-    // SAFE MODE
-    case Safe_Mode:
-        switch (c){
-            case '1':
+                case '3':
+                    if (motors_off && no_failure){
+                        *state = Calibration_Mode;
+                        printf("Calibration_Mode Selected\n");
+                    }
+                    break;
+
+                case '4':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Yaw_Mode;
+                        printf("Yaw_Mode Selected\n");
+                    }
+                    break;
+
+                case '5':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Full_Mode;
+                        printf("Full_Mode Selected\n");
+                    }
+                    break;
+
+                case '6':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Raw_Mode;
+                        printf("Raw_Mode Selected\n");
+                    }
+                    break;
+
+                case '7':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Height_Mode;
+                        printf("Height_Mode Selected\n");
+                    }
+                    break;
+
+                case '8':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Wireless_Mode;
+                        printf("Wireless_Mode Selected\n");
+                    }
+                    break;
+
+                default:
+                    printf("No mode selected\n");
+                    break;
+            }
+            break;
+
+        // MANUAL MODE
+        case Manual_Mode:
+            if (!no_failure){
                 *state = Panic_Mode;
-                printf("PANIC!!!!!\n");
-                panic_mode();
-                break;
-
-            case '2':
-                if (motors_off && no_failure){
-                    *state = Manual_Mode;
-                    printf("Manual_Mode Selected\n");
-                    // Call for Manual_Mode function required
-                }
-                break;
-
-          case '3':
-            if (motors_off && no_failure){
-              *state = Calibration_Mode;
-              printf("Calibration_Mode Selected\n");
-              calibration_mode();
-              printf("Calibration performed\n");
-              calibration_done = true; //Change after the calibration is done
-              if (motors_off && calibration_done){
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
                 *state = Safe_Mode;
                 printf("Safe_Mode Selected\n");
-              }
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '4':
-            if (motors_off && no_failure && calibration_done){
-              *state = Yaw_Mode;
-              printf("Yaw_Mode Selected\n");
-              // Call for Yaw_Mode function required
+        // YAW MODE
+        case Yaw_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '5':
-            if (motors_off && no_failure && calibration_done){
-              *state = Full_Mode;
-              printf("Full_Mode Selected\n");
-              // Call for Full_Mode function required
+        // FULL MODE
+        case Full_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '6':
-            if (motors_off && no_failure && calibration_done){
-              *state = Raw_Mode;
-              printf("Raw_Mode Selected\n");
-              // Call for Raw_Mode function required
+        // RAW MODE
+        case Raw_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '7':
-            if (motors_off && no_failure && calibration_done){
-              *state = Height_Mode;
-              printf("Height_Mode Selected\n");
-              // Call for Height_Mode function required
+        // HEIGHT MODE
+        case Height_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '8':
-            if (motors_off && no_failure && calibration_done){
-              *state = Wireless_Mode;
-              printf("Wireless_Mode Selected\n");
-              // Call for Full_Mode function required
+        // WIRELESS MODE
+        case Wireless_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          default:
-            printf("No mode selected\n");
+        // PANIC MODE
+        case Panic_Mode:
+            if (no_failure && motors_off && c == '0'){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
+            }
             break;
-      }
-      break;
 
-      // MANUAL MODE
-      case Manual_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
-      // YAW MODE
-      case Yaw_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
+        // CALIBRATION MODE
+        case Calibration_Mode:
+            break;
         }
         else{
           printf("No mode selected\n");
@@ -179,7 +245,6 @@ void step(enum states *state, int c) {
         else{
           printf("No mode selected\n");
         }
-        break;
 
       // RAW MODE
       case Raw_Mode:
@@ -227,6 +292,8 @@ void step(enum states *state, int c) {
         break;
 
 	case Panic_Mode:
+      if (c == '0' && motors_off && ((bat_volt > 1110) || (bat_volt < 650)))
+        *state = Safe_Mode;
 	  break;
 
 	case Calibration_Mode:
@@ -282,7 +349,7 @@ void process_key(uint8_t c){
       break;
     case '/':
       b--;
-      if(b < 1) d = 1;
+      if(b < 1) b = 1;
       break;
 
 		//lift, roll, pitch, yaw control
@@ -300,9 +367,12 @@ void process_key(uint8_t c){
 			break;
 		case 'u':
 			//yaw control p up
+      p+=10;
 			break;
 		case 'j':
 			//yaw control p down
+      if (p > 10)
+      p-=10;
 			break;
 		case 'i':
 			//roll, pitch control p1 up
@@ -331,41 +401,43 @@ void process_key(uint8_t c){
 		case 27:
 			demo_done = true;
 			break;
-		case '1':
-			nrf_gpio_pin_toggle(RED);
-            step(&state,'1');
+
+    //modes
+	case '1':
+	  nrf_gpio_pin_toggle(RED);
+      no_failure = false;
+      step(&state,'1');
 			break;
-        case '2':
-            step(&state,'2');
-            break;
-        case '3':
-            step(&state,'3');
-            break;
-        case '4':
-            step(&state,'4');
-            break;
-        case '5':
-            step(&state,'5');
-            break;
-        case '6':
-            step(&state,'6');
-            break;
-        case '7':
-            step(&state,'7');
-            break;
-        case '8':
-            step(&state,'8');
-            break;
-        case '0':
-            step(&state,'0');
-            printf("Go to safe mode\n");
-            break;
-        case 'p':
-            printf("%s\n",getCurrentState(state));
-            break;
-        default:
-            nrf_gpio_pin_toggle(RED);
-            break;
+    case '2':
+      step(&state,'2');
+      break;
+    case '3':
+      step(&state,'3');
+      break;
+    case '4':
+      step(&state,'4');
+      break;
+    case '5':
+      step(&state,'5');
+      break;
+    case '6':
+      step(&state,'6');
+      break;
+    case '7':
+      step(&state,'7');
+      break;
+    case '8':
+      step(&state,'8');
+      break;
+    case '0':
+      step(&state,'0');
+      break;
+    case 'p':
+      printf("%s\n",getCurrentState(state));
+      break;
+    default:
+      nrf_gpio_pin_toggle(RED);
+      break;
 	}
 }
 
@@ -383,75 +455,75 @@ void process_key(uint8_t c){
   * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
   */
  void processPkt() {
-         receivePkt();
-         while (readIndex < buffCount) {
-             switch (packState) {
-                 case wait:
-                     //printf("\nWAIT!\n");
-                     //printf("READ %02X\n", recChar[readIndex]);
-                     if (recChar[readIndex] == STARTBYTE) {
-                         //printf("START\n");
-                         ++readIndex;
-                         packState = first_byte_received;
-                     }
-                     else {
-                         slideMsg(1);
-                     }
-                     break;
-                 case first_byte_received:
-                     msglen = cmd2len(recChar[readIndex++]);
-                     packState = receiveMsg;
-                     if (msglen == 0){
-                         slideMsg(1);
-                         packState = wait;
-                     }
-                     //printf("\nFIRST!\n");
-                     break;
-                 case receiveMsg:
-                     if (readIndex < msglen - 1) {
-                         ++readIndex;
-                     }
-                     else {
-                         packState = CRC_Check;
-                     }
-                     //printf("\nRECV\n");
-                     break;
-                 case CRC_Check:
-                     if(checkCRC(recChar, msglen)) {
-                         receivedMsg[++recBuff] = getPayload(msglen);
-                         //printf("\nRECEIVED MESSAGE: ");
-                         // for (int k = 0; k < msglen; ++k) {
-                         //     printf("%02X ", recChar[k]);
-                         // }
-                         // printf("\n");
-                         processRecMsg();
-                         // if (buffCount > 13) {
-                         //     printf("oldStartByte: %02X\n", recChar[13]);
-                         // }
-                         // printf("%d/%d -> ", readIndex, buffCount);
-                         slideMsg(msglen);
-                         // printf("%d/%d\n", readIndex, buffCount);
-                         // if (buffCount > 0) {
-                         //     printf("currentStartByte: %02X\n", recChar[0]);
-                         // }
-                         packState = wait;
-                     }
-                     else {
-                         //printf("\nCRC FAIL!\n");
-                         slideMsg(1);
-                         packState = wait;
-                     }
-                     // printf("\nCRC!\n");
-                     break;
-                 case panic:
-                     //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
-                     //panic_on = true;
-                     break;
-                 default:
-                     packState = panic;
-             }
-         }
- }
+  receivePkt();
+  while (readIndex < buffCount) {
+    switch (packState) {
+      case wait:
+        //printf("\nWAIT!\n");
+        //printf("READ %02X\n", recChar[readIndex]);
+        if (recChar[readIndex] == STARTBYTE) {
+          //printf("START\n");
+          ++readIndex;
+          packState = first_byte_received;
+        }
+        else {
+          slideMsg(1);
+        }
+        break;
+      case first_byte_received:
+        msglen = cmd2len(recChar[readIndex++]);
+        packState = receiveMsg;
+        if (msglen == 0) {
+          slideMsg(1);
+          packState = wait;
+        }
+        //printf("\nFIRST!\n");
+        break;
+      case receiveMsg:
+        if (readIndex < msglen - 1) {
+          ++readIndex;
+        }
+        else {
+          packState = CRC_Check;
+        }
+        //printf("\nRECV\n");
+        break;
+      case CRC_Check:
+        if (checkCRC(recChar, msglen)) {
+          receivedMsg[++recBuff] = getPayload(msglen);
+          //printf("\nRECEIVED MESSAGE: ");
+          // for (int k = 0; k < msglen; ++k) {
+          //     printf("%02X ", recChar[k]);
+          // }
+          // printf("\n");
+          processRecMsg();
+          // if (buffCount > 13) {
+          //     printf("oldStartByte: %02X\n", recChar[13]);
+          // }
+          // printf("%d/%d -> ", readIndex, buffCount);
+          slideMsg(msglen);
+          // printf("%d/%d\n", readIndex, buffCount);
+          // if (buffCount > 0) {
+          //     printf("currentStartByte: %02X\n", recChar[0]);
+          // }
+          packState = wait;
+        }
+        else {
+          //printf("\nCRC FAIL!\n");
+          slideMsg(1);
+          packState = wait;
+        }
+        // printf("\nCRC!\n");
+        break;
+      case panic:
+        //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+        //panic_on = true;
+        break;
+      default:
+        packState = panic;
+    }
+  }
+}
 
 void processRecMsg(){
 	if(recBuff != 0){
@@ -504,24 +576,16 @@ void changeMov(uint8_t *msg){
 	// for(j = 0; j < msglen-ADDBYTES; printf("%04x ",msg[j]),j++);
 	// printf("\n");
 	//int16_t mot1, mot2, mot3, mot4;
+
 	axis[0] = (int16_t)combineByte(msg[0], msg[1]);
 	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
-    //printf("%10ld | ", get_time_us());
-    printf("ax_0 = %6d | ax_1 = %6d | ax_2 = %6d | ax_3 = %6d\n", axis[0], axis[1], axis[2], axis[3]);
-    if (state == Manual_Mode)
-        manual_mode();
 }
 
 void changeKbParam(uint8_t *msg){
 	process_key((uint8_t)msg[0]);
 }
-
-/*------------------------------------------------------------------
- * main -- everything you need is here :)
- *------------------------------------------------------------------
- */
 
 void checkMotors() {
 	uint8_t data[8];
@@ -532,6 +596,11 @@ void checkMotors() {
 		ae[i] = data[2*i] | (data[2*i+1] << 8);
 	}
 }
+
+/*------------------------------------------------------------------
+ * main -- everything you need is here :)
+ *------------------------------------------------------------------
+ */
 
 int main(void)
 {
@@ -545,11 +614,13 @@ int main(void)
 	spi_flash_init();
 	ble_init();
 	initProtocol();
+    initValues();
+    dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
+    //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
-	demo_done = false;
-	state = Safe_Mode;
-    phi_avg = 0, theta_avg = 0, psi_avg = 0;
+
+    //tm1 = get_time_us();
 
 	while (!demo_done)
 	{
@@ -565,6 +636,9 @@ int main(void)
   			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
   			adc_request_sample();
+            if (bat_volt < 500) {
+                state = Panic_Mode;
+            }
   			//printf("adc req\n");
   			read_baro();
   			//printf("read baro\n");
@@ -573,21 +647,32 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
-			//printf("%10ld | ", get_time_us());
-			//printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
-			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			//printf("%6d %6d %6d | ", sp, sq, sr);
-			//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
 
+			printf("%10ld | %2d | ", get_time_us(), state);
+			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
+			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+            printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
   			clear_timer_flag();
   			//printf("cleartimerflag\n");
+
+
+            //if (state == Manual_Mode)
+            //    manual_mode();
   		}
 
   		if (check_sensor_int_flag())
   		{
+            //tm2 = get_time_us();
+            //diff = (tm2 - tm1)/ 1000;
+            //printf("%4ld \n ", diff);
+            //tm1 = tm2;
   			get_dmp_data();
-  			run_filters_and_control();
+  			run_filters_and_control(&state);
   		}
+
+
   	}
 	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);

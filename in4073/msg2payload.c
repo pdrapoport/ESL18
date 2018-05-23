@@ -16,15 +16,12 @@
 #include "msg2payload.h"
 #include <stdlib.h>
 #include <string.h>
+
 void initProtocol(){
     msgId = 0;
     buffCount = 0;
     readIndex = 0;
-    b = 1;
-    d = 1;
-
     recBuff = 0;
-    messageComplete = false;
     packState = wait;
 }
 

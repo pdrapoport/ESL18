@@ -213,9 +213,10 @@ void step(enum states *state, int c) {
         break;
 
 	case Panic_Mode:
-      if (c == '0' && motors_off && ((bat_volt > 1110) || (bat_volt < 650)))
-        *state = Safe_Mode;
-	  break;
+        nrf_gpio_pin_toggle(RED);
+        if (c == '0' && motors_off && ((bat_volt > 1110) || (bat_volt < 650)))
+            *state = Safe_Mode;
+	    break;
 
 	case Calibration_Mode:
 	  break;
@@ -525,6 +526,7 @@ void checkMotors() {
 
 int main(void)
 {
+    bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -557,7 +559,7 @@ int main(void)
   			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
   			adc_request_sample();
-            if (bat_volt < 500) {
+            if (bat_volt < 500) { // Safety check: battery voltage
                 state = Panic_Mode;
             }
   			//printf("adc req\n");
@@ -568,6 +570,11 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
+            if( tx_queue.count > 150 && !connection_lost ) { // Safety check: connection drone-pc working
+                state = Panic_Mode;
+                // Optional LED turning on?
+                connection_lost = true;
+            }
 
 			printf("%10ld | %2d | ", get_time_us(), state);
 			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);

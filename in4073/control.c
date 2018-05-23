@@ -141,6 +141,8 @@ void run_filters_and_control(enum states *state){
 				ae[i] = 500;
 			else if (lift > 5910 && ae[i] <= 152)
 				ae[i] = 152;
+			else if (ae[i]<0)
+				ae[i] = 0;
 		}
 
 		//printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);

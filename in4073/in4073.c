@@ -62,170 +62,171 @@ const char* getCurrentState(enum states state)
 }
 
 void step(enum states *state, int c) {
-  switch (*state) {
+    switch (*state) {
+        // SAFE MODE
+        case Safe_Mode:
+            no_failure = true;
+            switch (c){
+                case '2':
+                    if (motors_off && no_failure){
+                        *state = Manual_Mode;
+                        printf("Manual_Mode Selected\n");
+                    }
+                    break;
 
-    // SAFE MODE
-    case Safe_Mode:
-        switch (c){
-            case '2':
-                if (motors_off && no_failure){
-                    *state = Manual_Mode;
-                    printf("Manual_Mode Selected\n");
-                    // Call for Manual_Mode function required
-                }
-                break;
+                case '3':
+                    if (motors_off && no_failure){
+                        *state = Calibration_Mode;
+                        printf("Calibration_Mode Selected\n");
+                    }
+                    break;
 
-          case '3':
-            if (motors_off && no_failure){
-              *state = Calibration_Mode;
-              printf("Calibration_Mode Selected\n");
-              // calibration_mode();
+                case '4':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Yaw_Mode;
+                        printf("Yaw_Mode Selected\n");
+                    }
+                    break;
+
+                case '5':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Full_Mode;
+                        printf("Full_Mode Selected\n");
+                    }
+                    break;
+
+                case '6':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Raw_Mode;
+                        printf("Raw_Mode Selected\n");
+                    }
+                    break;
+
+                case '7':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Height_Mode;
+                        printf("Height_Mode Selected\n");
+                    }
+                    break;
+
+                case '8':
+                    if (motors_off && no_failure && calibration_done){
+                        *state = Wireless_Mode;
+                        printf("Wireless_Mode Selected\n");
+                    }
+                    break;
+
+                default:
+                    printf("No mode selected\n");
+                    break;
             }
             break;
 
-          case '4':
-            if (motors_off && no_failure && calibration_done){
-              *state = Yaw_Mode;
-              printf("Yaw_Mode Selected\n");
-              // Call for Yaw_Mode function required
+        // MANUAL MODE
+        case Manual_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '5':
-            if (motors_off && no_failure && calibration_done){
-              *state = Full_Mode;
-              printf("Full_Mode Selected\n");
-              // Call for Full_Mode function required
+        // YAW MODE
+        case Yaw_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '6':
-            if (motors_off && no_failure && calibration_done){
-              *state = Raw_Mode;
-              printf("Raw_Mode Selected\n");
-              // Call for Raw_Mode function required
+        // FULL MODE
+        case Full_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '7':
-            if (motors_off && no_failure && calibration_done){
-              *state = Height_Mode;
-              printf("Height_Mode Selected\n");
-              // Call for Height_Mode function required
+        // RAW MODE
+        case Raw_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          case '8':
-            if (motors_off && no_failure && calibration_done){
-              *state = Wireless_Mode;
-              printf("Wireless_Mode Selected\n");
-              // Call for Full_Mode function required
+        // HEIGHT MODE
+        case Height_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
             }
             break;
 
-          default:
-            printf("No mode selected\n");
+        // WIRELESS MODE
+        case Wireless_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+                printf("Panic_Mode Selected\n");
+            }
+            else if (c == '0' && motors_off){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
+            }
             break;
-      }
-      break;
 
-      // MANUAL MODE
-      case Manual_Mode:
-        if (!no_failure){
-          *state = Panic_Mode;
-          //panic_mode();
-        }
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
+        // PANIC MODE
+        case Panic_Mode:
+            if (no_failure && motors_off && c == '0'){
+                *state = Safe_Mode;
+                printf("Safe_Mode Selected\n");
+            }
+            else{
+                printf("No mode selected\n");
+            }
+            break;
 
-      // YAW MODE
-      case Yaw_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
+        // CALIBRATION MODE
+        case Calibration_Mode:
+            break;
         }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
-      // FULL MODE
-      case Full_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
-      // RAW MODE
-      case Raw_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
-      // HEIGHT MODE
-      case Height_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
-      // WIRELESS MODE
-      case Wireless_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
-          *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
-          // Call for Safe_Mode function required
-        }
-        else{
-          printf("No mode selected\n");
-        }
-        break;
-
-	case Panic_Mode:
-	  break;
-
-	case Calibration_Mode:
-	  break;
-    }
 }
 
 /*------------------------------------------------------------------
@@ -330,8 +331,8 @@ void process_key(uint8_t c){
 			break;
 
     //modes
-		case '1':
-			nrf_gpio_pin_toggle(RED);
+	case '1':
+	  nrf_gpio_pin_toggle(RED);
       no_failure = false;
       step(&state,'1');
 			break;
@@ -358,7 +359,6 @@ void process_key(uint8_t c){
       break;
     case '0':
       step(&state,'0');
-      printf("Go to safe mode\n");
       break;
     case 'p':
       printf("%s\n",getCurrentState(state));
@@ -515,11 +515,6 @@ void changeKbParam(uint8_t *msg){
 	process_key((uint8_t)msg[0]);
 }
 
-/*------------------------------------------------------------------
- * main -- everything you need is here :)
- *------------------------------------------------------------------
- */
-
 void checkMotors() {
 	uint8_t data[8];
 	for(int i = 0; i < 8; ++i) {
@@ -529,6 +524,11 @@ void checkMotors() {
 		ae[i] = data[2*i] | (data[2*i+1] << 8);
 	}
 }
+
+/*------------------------------------------------------------------
+ * main -- everything you need is here :)
+ *------------------------------------------------------------------
+ */
 
 int main(void)
 {
@@ -542,12 +542,12 @@ int main(void)
 	spi_flash_init();
 	ble_init();
 	initProtocol();
-  initValues();
-  dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+    initValues();
+    dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
-	
+
     //tm1 = get_time_us();
 
 	while (!demo_done)

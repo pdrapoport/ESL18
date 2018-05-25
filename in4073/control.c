@@ -13,7 +13,6 @@
 #include "in4073.h"
 #include "math.h"
 
-
 //Variables for calibration
 int16_t sp_array[64], sq_array[64], sr_array[64];
 int16_t sax_array[64], say_array[64], saz_array[64];
@@ -117,7 +116,7 @@ void run_filters_and_control(enum states *state){
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
-			if(k++ % 10 == 0){
+			if(k++ % 3 == 0){
 				for (int j = 0; j<4; j++){
 					ae[j] -= 1;
 					if (ae[j] <= 0)
@@ -129,7 +128,7 @@ void run_filters_and_control(enum states *state){
 			break;
 	}
 
-	if (*state != Panic_Mode){ 
+	if (*state != Panic_Mode){
 		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
 		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
 		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C

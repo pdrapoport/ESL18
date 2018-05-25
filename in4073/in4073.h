@@ -42,6 +42,8 @@ enum states {
   Wireless_Mode         // Mode 8
 } state;
 
+int16_t axis_offset[4];
+
 // Control
 int16_t motor[4],ae[4];
 int16_t axis[4];

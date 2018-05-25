@@ -37,6 +37,8 @@ void initValues(){
   motors_off = true;
   calibration_done = false;
   no_failure = true;
+  for (int i = 0;i<4;i++)
+    axis_offset[i] = 0;
 }
 
 /*------------------------------------------------------------------
@@ -222,6 +224,19 @@ void step(enum states *state, int c) {
     }
 }
 
+void apply_offset_js_axis(){
+    int32_t temp;
+    for(int i = 0;i<4;i++){
+        temp = axis[i]+axis_offset[i];
+        if (temp < -32767)
+            axis[i] = -32767;
+        else if (temp>32767)
+            axis[i] = 32767;
+        else
+            axis[i] = temp;
+    }
+}
+
 /*------------------------------------------------------------------
  * process_key -- process command keys
  *------------------------------------------------------------------
@@ -274,17 +289,25 @@ void process_key(uint8_t c){
       break;
 
 		//lift, roll, pitch, yaw control
-		case 'a':
-			//lift up
-			break;
-		case 'z':
-			//lift down
-			break;
+    case 'a':
+        //lift up
+        if (axis_offset[3]<31767)
+            axis_offset[3] += 1000;
+        break;
+    case 'z':
+        //lift down
+        if (axis_offset[3]>-31767)
+            axis_offset[3] -= 1000;
+        break;
 		case 'q':
 			//yaw down
+            if (axis_offset[2]> -31767)
+                axis_offset[2] -= 1000;
 			break;
 		case 'w':
 			//yaw up
+            if (axis_offset[2]<31767)
+                axis_offset[2] += 1000;
 			break;
 		case 'u':
 			//yaw control p up
@@ -309,15 +332,23 @@ void process_key(uint8_t c){
 			break;
 		case 43:
 			//pitch down
+            if (axis_offset[1]<31767)
+                axis_offset[1] += 1000;
 			break;
 		case 95:
 			//pitch up
+            if (axis_offset[1]> -31767)
+                axis_offset[1] -= 1000;
 			break;
 		case 40:
 			//roll up
+            if (axis_offset[0]<31767)
+                axis_offset[0] += 1000;
 			break;
 		case 41:
 			//roll down
+            if (axis_offset[0]> -31767)
+                axis_offset[0] -= 1000;
 			break;
 		case 27:
 			demo_done = true;
@@ -502,6 +533,7 @@ void changeMov(uint8_t *msg){
 	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
+    apply_offset_js_axis();
 }
 
 void changeKbParam(uint8_t *msg){
@@ -542,7 +574,6 @@ int main(void)
 	uint32_t counter = 0;
 
     //tm1 = get_time_us();
-
 	while (!demo_done)
 	{
   		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
@@ -551,15 +582,13 @@ int main(void)
   		/*if (rx_queue.count) {
   			checkMotors();
   		}*/
-  		if (check_timer_flag())
+  		if (check_timer_flag()) //40 ms
   		{
 
   			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
   			adc_request_sample();
-            if (bat_volt < 500) {
-                state = Panic_Mode;
-            }
+
   			//printf("adc req\n");
   			read_baro();
   			//printf("read baro\n");
@@ -568,9 +597,8 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
-
 			printf("%10ld | %2d | ", get_time_us(), state);
-			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+            printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
 			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
 			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
             printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
@@ -581,9 +609,12 @@ int main(void)
 
             //if (state == Manual_Mode)
             //    manual_mode();
+            if (bat_volt < 500) {
+                state = Panic_Mode;
+            }
   		}
 
-  		if (check_sensor_int_flag())
+  		if (check_sensor_int_flag()) //10 ms
   		{
             //tm2 = get_time_us();
             //diff = (tm2 - tm1)/ 1000;

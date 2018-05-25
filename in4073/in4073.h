@@ -56,6 +56,15 @@ int b, d, p, p1, p2;
 bool no_failure;
 
 
+//Filters
+void initialize_butterworth();
+void initialize_integrator();
+void initialize_kalman();
+
+int butterworth_filter(int phi_raw);
+int compute_phi(int p_filtered);
+int kalman_filter(int phi_filtered, int p_read);
+
 // Timers
 #define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)
 void timers_init(void);

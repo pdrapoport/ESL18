@@ -4,7 +4,7 @@
  * Arjan J.C. van Gemund (+ mods by Ioannis Protonotarios)
  *
  * read more: http://mirror.datenwolf.net/serial/
- *------------------------------------------------------------
+ **------------------------------------------------------------
  */
 
 #define PC
@@ -24,11 +24,12 @@
 
 /*------------------------------------------------------------
  * console I/O
- *------------------------------------------------------------
+ **------------------------------------------------------------
  */
-struct termios 	savetty;
+struct termios savetty;
+FILE *fp;  //printing to a file just to check the filters
 
-void	term_initio()
+void    term_initio()
 {
 	struct termios tty;
 
@@ -42,46 +43,47 @@ void	term_initio()
 	tcsetattr(0, TCSADRAIN, &tty);
 }
 
-void	term_exitio()
+void    term_exitio()
 {
 	tcsetattr(0, TCSADRAIN, &savetty);
 }
 
-void	term_puts(char *s)
+void    term_puts(char *s)
 {
-	fprintf(stderr,"%s",s);
+	fprintf(stderr, "char: %s\n",s);
 }
 
 
-void	term_putchar(char c)
+void    term_putchar(char c)
 {
 	putc(c,stderr);
+	fprintf(fp,"%c",c);  //printing to a file just to check the filters
 }
 
-int	term_getchar_nb()
+int     term_getchar_nb()
 {
-        static unsigned char 	line [2];
+	static unsigned char line [2];
 
-        if (read(0,line,1)) // note: destructive read
-        		return (int) line[0];
+	if (read(0,line,1)) // note: destructive read
+		return (int) line[0];
 
-        return -1;
+	return -1;
 }
 
-int	term_getchar()
+int     term_getchar()
 {
-        int    c;
+	int c;
 
-        while ((c = term_getchar_nb()) == -1)
-                ;
-        return c;
+	while ((c = term_getchar_nb()) == -1)
+		;
+	return c;
 }
 
 /*------------------------------------------------------------
  * Serial I/O
  * 8 bits, 1 stopbit, no parity,
  * 115,200 baud
- *------------------------------------------------------------
+ **------------------------------------------------------------
  */
 #include <termios.h>
 #include <ctype.h>
@@ -97,7 +99,7 @@ int	term_getchar()
 int serial_device = 0;
 int fd_RS232, js_fd;
 fd_set set;
-struct js_event	js;
+struct js_event js;
 
 int axis[6];
 int button[12];
@@ -105,21 +107,21 @@ struct timeval timeout;
 
 void rs232_open(void)
 {
-  	char 		*name;
-  	int 		result;
-  	struct termios	tty;
+	char            *name;
+	int result;
+	struct termios tty;
 
-       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
-				printf("%d\n",fd_RS232);
+	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+	printf("%d\n",fd_RS232);
 	assert(fd_RS232>=0);
 
-  	result = isatty(fd_RS232);
-  	assert(result == 1);
+	result = isatty(fd_RS232);
+	assert(result == 1);
 
-  	name = ttyname(fd_RS232);
-  	assert(name != 0);
+	name = ttyname(fd_RS232);
+	assert(name != 0);
 
-  	result = tcgetattr(fd_RS232, &tty);
+	result = tcgetattr(fd_RS232, &tty);
 	assert(result == 0);
 
 	tty.c_iflag = IGNBRK; /* ignore break condition */
@@ -149,20 +151,20 @@ void rs232_open(void)
 }
 
 
-void 	rs232_close(void)
+void    rs232_close(void)
 {
-  	int 	result;
+	int result;
 
-  	result = close(fd_RS232);
-  	assert (result==0);
+	result = close(fd_RS232);
+	assert (result==0);
 }
 
 
 
-int	rs232_getchar_nb()
+int     rs232_getchar_nb()
 {
-	int 		result;
-	unsigned char 	c;
+	int result;
+	unsigned char c;
 
 	int rv = select(fd_RS232 + 1, &set, &set, &set, &timeout);
 	if (rv == -1) {
@@ -184,9 +186,9 @@ int	rs232_getchar_nb()
 }
 
 
-int 	rs232_getchar()
+int     rs232_getchar()
 {
-	int 	c;
+	int c;
 
 	while ((c = rs232_getchar_nb()) == -1)
 		;
@@ -194,7 +196,7 @@ int 	rs232_getchar()
 }
 
 
-int 	rs232_putchar(char c)
+int     rs232_putchar(char c)
 {
 	int result;
 
@@ -206,8 +208,8 @@ int 	rs232_putchar(char c)
 	return result;
 }
 int pc2drone(uint8_t *msg){
-    int result;
-    int msglen = cmd2len(msg[1]);
+	int result;
+	int msglen = cmd2len(msg[1]);
 	//fprintf(stderr,"msglen: %d\n",msglen);
 	do {
 		result = (int) write(fd_RS232, msg, msglen);
@@ -220,34 +222,34 @@ int pc2drone(uint8_t *msg){
 void process_joystick(uint8_t but){
 	uint8_t msg[PWKBLEN - ADDBYTES];
 	uint8_t *payload;
-	switch(but){
-		case 0:
-			msg[0] = '1';
-			break;
-		case 1:
-			msg[0] = '0';
-			break;
-		case 2:
-			msg[0] = '3';
-			break;
-		case 6:
-			msg[0] = '2';
-			break;
-		case 7:
-			msg[0] = '4';
-			break;
-		case 8:
-			msg[0] = '5';
-			break;
-		case 9:
-			msg[0] = '6';
-			break;
-		case 10:
-			msg[0] = '7';
-			break;
-		case 11:
-			msg[0] = '8';
-			break;
+	switch(but) {
+	case 0:
+		msg[0] = '1';
+		break;
+	case 1:
+		msg[0] = '0';
+		break;
+	case 2:
+		msg[0] = '3';
+		break;
+	case 6:
+		msg[0] = '2';
+		break;
+	case 7:
+		msg[0] = '4';
+		break;
+	case 8:
+		msg[0] = '5';
+		break;
+	case 9:
+		msg[0] = '6';
+		break;
+	case 10:
+		msg[0] = '7';
+		break;
+	case 11:
+		msg[0] = '8';
+		break;
 	}
 	payload = makePayload(PWKB, msg);
 	pc2drone(payload);
@@ -260,98 +262,98 @@ void process_key(uint8_t c)
 	msg[0] = (char)c;
 	uint8_t *payload;
 	//fprintf(stderr,"%04x\n",msg[0]);
-	switch(msg[0]){
-		//motor control
-		case 'd': //motor 0 up
-		case 'c': //motor 0 down
-		case 'f': //motor 1 up
-		case 'v': //motor 1 down
-		case 'g': //motor 2 up
-		case 'b': //motor 2 down
-		case 'h': //motor 3 up
-		case 'n': //motor 4 down
-		case 'm': //b constant up
-		case ',': //b constant down
-		case '.': //d constant up
-		case '/': //d constant down
+	switch(msg[0]) {
+	//motor control
+	case 'd':         //motor 0 up
+	case 'c':         //motor 0 down
+	case 'f':         //motor 1 up
+	case 'v':         //motor 1 down
+	case 'g':         //motor 2 up
+	case 'b':         //motor 2 down
+	case 'h':         //motor 3 up
+	case 'n':         //motor 4 down
+	case 'm':         //b constant up
+	case ',':         //b constant down
+	case '.':         //d constant up
+	case '/':         //d constant down
 
-		//lift, roll, pitch, yaw control
-		case 'a': //lift up
-		case 'z': //lift down
-		case 'q': //yaw down
-		case 'w': //yaw up
-		case 'u': //yaw control p up
-		case 'j': //yaw control p down
-		case 'i': //roll, pitch control p1 up
-		case 'k': //roll, pitch control p1 down
-		case 'o': //roll, pitch control p2 up
-		case 'l': //roll, pitch control p2 down
-			payload = makePayload(PWKB, msg);
+	//lift, roll, pitch, yaw control
+	case 'a':         //lift up
+	case 'z':         //lift down
+	case 'q':         //yaw down
+	case 'w':         //yaw up
+	case 'u':         //yaw control p up
+	case 'j':         //yaw control p down
+	case 'i':         //roll, pitch control p1 up
+	case 'k':         //roll, pitch control p1 down
+	case 'o':         //roll, pitch control p2 up
+	case 'l':         //roll, pitch control p2 down
+		payload = makePayload(PWKB, msg);
+		break;
+
+	//mode
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case 'p':
+		payload = makePayload(PWMODE, msg);
+		break;
+
+	//test case
+	case 'y':
+		msg[0] = 0x01;
+		msg[1] = 0x56;
+		msg[2] = 0x00;
+		msg[3] = 0x2C;
+		msg[4] = 0x01;
+		msg[5] = 0x4D;
+		msg[6] = 0x00;
+		msg[7] = 0x16;
+		payload = makePayload(PWMOV, msg);
+		break;
+
+	//arrow and escape
+	case 27:
+		term_getchar_nb();
+		switch(term_getchar_nb()) {
+		case 65:
+			//arrow up, pitch down
+			msg[0] = 43;
 			break;
 
-		//mode
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case 'p':
-			payload = makePayload(PWMODE, msg);
+		case 66:
+			//arrow down, pitch up
+			msg[0] = 95;
 			break;
 
-		//test case
-		case 'y':
-			msg[0] = 0x01;
-			msg[1] = 0x56;
-			msg[2] = 0x00;
-			msg[3] = 0x2C;
-			msg[4] = 0x01;
-			msg[5] = 0x4D;
-			msg[6] = 0x00;
-			msg[7] = 0x16;
-			payload = makePayload(PWMOV, msg);
+		case 68:
+			//arrow left, roll up
+			msg[0] = 40;
 			break;
 
-		//arrow and escape
-		case 27:
-			term_getchar_nb();
-			switch(term_getchar_nb()){
-				case 65:
-					//arrow up, pitch down
-					msg[0] = 43;
-					break;
-
-				case 66:
-					//arrow down, pitch up
-					msg[0] = 95;
-					break;
-
-				case 68:
-					//arrow left, roll up
-					msg[0] = 40;
-					break;
-
-				case 67:
-					//arrow right, roll down
-					msg[0] = 41;
-					break;
-
-				default:
-					//escape, abort
-					msg[0] = 27;
-					break;
-			}
-			payload = makePayload(PWKB, msg);
+		case 67:
+			//arrow right, roll down
+			msg[0] = 41;
 			break;
 
 		default:
-			msg[0] = '/';
-			payload = makePayload(PWKB, msg);
+			//escape, abort
+			msg[0] = 27;
 			break;
+		}
+		payload = makePayload(PWKB, msg);
+		break;
+
+	default:
+		msg[0] = '/';
+		payload = makePayload(PWKB, msg);
+		break;
 	}
 
 	pc2drone(payload);
@@ -378,33 +380,33 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
 
 void checkJoystick() {
 	while (read(js_fd,&js,sizeof(struct js_event)) ==
-		   sizeof(struct js_event))  {
+	       sizeof(struct js_event))  {
 		switch(js.type & ~JS_EVENT_INIT) {
-			case JS_EVENT_BUTTON:
-				button[js.number] = js.value;
-				if(button[js.number] == 1) process_joystick(js.number);
-				break;
-			case JS_EVENT_AXIS:
-				axis[js.number] = js.value;
-				break;
+		case JS_EVENT_BUTTON:
+			button[js.number] = js.value;
+			if(button[js.number] == 1) process_joystick(js.number);
+			break;
+		case JS_EVENT_AXIS:
+			axis[js.number] = js.value;
+			break;
 		}
 		//if (errno != EAGAIN) {
 		//	perror("\njs: error reading (EAGAIN)");
 		//	exit (1);
 		//}
-}
+	}
 }
 
 /*----------------------------------------------------------------
  * main -- execute terminal
- *----------------------------------------------------------------
+ **----------------------------------------------------------------
  */
 
 int main(int argc, char **argv)
 {
-	char		c;
-	struct timeval 	start;
-	struct timeval	tm1, tm2;
+	char c;
+	struct timeval start;
+	struct timeval tm1, tm2;
 	long long diff;
 	long long absdiff;
 	bool exit = false;
@@ -412,7 +414,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
 	}
-
+	fp = fopen("file.txt","w");
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
 
 	term_initio();
@@ -437,15 +439,15 @@ int main(int argc, char **argv)
 	/* discard any incoming text
 	 */
 	//while ((c = rs232_getchar_nb()) != -1)
-		//fputc(c,stderr);
+	//fputc(c,stderr);
 
 	/* send & receive
 	 */
 
 
-	for (;;)
+	for (;; )
 	{
-		if ((c = term_getchar_nb()) != -1){
+		if ((c = term_getchar_nb()) != -1) {
 			fprintf(stderr, "char: %c\n",c);
 			process_key(c);
 			if (c == 'e')
@@ -462,7 +464,7 @@ int main(int argc, char **argv)
 			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
 
 			//printf()			// for (int i = 0; i < 4; ++i) {
-			// 	axis[i]++;
+			//      axis[i]++;
 			// }
 			//if ((c = term_getchar_nb()) != -1)
 			//	rs232_putchar(c);
@@ -477,6 +479,8 @@ int main(int argc, char **argv)
 	term_exitio();
 	rs232_close();
 	close(js_fd);
+	fclose(fp);
+
 	term_puts("\n<exit>\n");
 
 	return 0;

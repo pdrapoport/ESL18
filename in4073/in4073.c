@@ -315,20 +315,23 @@ void process_key(uint8_t c){
 			break;
 		case 'j':
 			//yaw control p down
-      if (p > 10)
-      p-=10;
+      if (p > 10) p-=10;
 			break;
 		case 'i':
 			//roll, pitch control p1 up
+      p1+=10;
 			break;
 		case 'k':
 			//roll, pitch control p1 down
+      if(p1 > 10) p1-=10;
 			break;
 		case 'o':
 			//roll, pitch control p2 up
+      p2+=10;
 			break;
 		case 'l':
 			//roll, pitch control p2 down
+      if(p2 > 10) p2-=10;
 			break;
 		case 43:
 			//pitch down

@@ -364,13 +364,6 @@ void process_key(uint8_t c){
 }
 
 
-// Author: Vincent Bejach
-/* Implement the FSM defined for the communication protocol.
- * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
- * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
- */
-
-
  // Author: Vincent Bejach
  /* Implement the FSM defined for the communication protocol.
   * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
@@ -519,6 +512,20 @@ void checkMotors() {
 	}
 }
 
+// Author: Vincent Bejach
+// Safety check to verify the connection pc-drone is still active
+bool connection_drone_pc_check(enum states *state) {
+    bool connection_lost = false;
+
+    if( tx_queue.count > 150 && !connection_lost ) { // Safety check: connection drone-pc working
+        *state = Panic_Mode;
+        // Optional LED turning on?
+        connection_lost = true;
+    }
+
+    return connection_lost;
+}
+
 /*------------------------------------------------------------------
  * main -- everything you need is here :)
  *------------------------------------------------------------------
@@ -570,10 +577,15 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
-            if( tx_queue.count > 150 && !connection_lost ) { // Safety check: connection drone-pc working
+            /*if( tx_queue.count > 150 && !connection_lost ) { // Safety check: connection drone-pc working
                 state = Panic_Mode;
                 // Optional LED turning on?
                 connection_lost = true;
+            }*/
+
+            // Safety check: connection between drone and pc is still active
+            if(!connection_lost) {
+                connection_lost = connection_drone_pc_check(&state);
             }
 
 			printf("%10ld | %2d | ", get_time_us(), state);

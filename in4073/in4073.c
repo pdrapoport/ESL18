@@ -508,15 +508,55 @@ void changeKbParam(uint8_t *msg){
 	process_key((uint8_t)msg[0]);
 }
 
-void checkMotors() {
-	uint8_t data[8];
-	for(int i = 0; i < 8; ++i) {
-		data[i] = dequeue(&rx_queue);
-	}
-	for(int i = 0; i < 4; ++i) {
-		ae[i] = data[2*i] | (data[2*i+1] << 8);
-	}
+void sendTelemetryPacket() {
+    uint8_t packet[42];
+    uint32_t timestamp = get_time_us();
+    packet[0] = fourthByte(timestamp);
+    packet[1] = thirdByte(timestamp);
+    packet[2] = secondByte(timestamp);
+    packet[3] = lowByte(timestamp);
+    packet[4] = state;
+    packet[5] = calibration_done;
+    for(int i = 0; i < 4; ++i) {
+        packet[6 + 2 * i] = lowByte(ae[i]);
+        packet[6 + 2 * i + 1] = highByte(ae[i]);
+    }
+    packet[14] = highByte(phi_avg);
+    packet[15] = lowByte(phi_avg);
+    packet[16] = highByte(theta_avg);
+    packet[17] = lowByte(theta_avg);
+    packet[18] = highByte(psi_avg);
+    packet[19] = lowByte(psi_avg);
+    packet[20] = highByte(sp_avg);
+    packet[21] = lowByte(sp_avg);
+    packet[22] = highByte(sq_avg);
+    packet[23] = lowByte(sq_avg);
+    packet[24] = highByte(sr_avg);
+    packet[25] = lowByte(sr_avg);
+    packet[26] = highByte(sax_avg);
+    packet[27] = lowByte(sax_avg);
+    packet[28] = highByte(say_avg);
+    packet[29] = lowByte(say_avg);
+    packet[30] = highByte(saz_avg);
+    packet[31] = lowByte(saz_avg);
+    packet[32] = highByte(bat_volt);
+    packet[33] = lowByte(bat_volt);
+    packet[34] = fourthByte(temperature);
+    packet[35] = thirdByte(temperature);
+    packet[36] = secondByte(temperature);
+    packet[37] = lowByte(temperature);
+    packet[38] = fourthByte(pressure);
+    packet[39] = thirdByte(pressure);
+    packet[40] = secondByte(pressure);
+    packet[41] = lowByte(pressure);
+    uint8_t *msg = makePayload(DWTEL, packet);
+    for(int i = 0; i < 48; ++i) {
+        printf("%c", msg[i]);
+    }
+    free(msg);
 }
+
+
 
 /*------------------------------------------------------------------
  * main -- everything you need is here :)
@@ -540,6 +580,7 @@ int main(void)
 
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
+    uint32_t lts = get_time_us();
 
     //tm1 = get_time_us();
 
@@ -565,16 +606,13 @@ int main(void)
   			//printf("read baro\n");
 
   			//printf("test %d\n",i++);
-  			processRecMsg();
   			//printf("processrecmsg\n");
-
-
-			printf("%10ld | %2d | ", get_time_us(), state);
-			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
-			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-            printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
+			//printf("%10ld | %2d | ", get_time_us(), state);
+			//printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
+			//printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+            //printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			//printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
   			clear_timer_flag();
   			//printf("cleartimerflag\n");
 
@@ -582,6 +620,11 @@ int main(void)
             //if (state == Manual_Mode)
             //    manual_mode();
   		}
+
+        if ((get_time_us() - lts) > 100000) {
+            sendTelemetryPacket();
+            lts = get_time_us();
+        }
 
   		if (check_sensor_int_flag())
   		{
@@ -595,7 +638,6 @@ int main(void)
 
 
   	}
-	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);
 
 	NVIC_SystemReset();

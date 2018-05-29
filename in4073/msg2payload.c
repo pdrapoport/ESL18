@@ -87,6 +87,9 @@ uint8_t cmd2len(uint8_t idCmd){
         case DWMODE:
             msglen = DWMODELEN;
             break;
+        case DWTEL:
+            msglen = DWTELLEN;
+            break;
         case PRMODE:
             msglen = PRMODELEN;
             break;

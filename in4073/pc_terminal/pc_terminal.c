@@ -382,10 +382,12 @@ void checkJoystick() {
 		switch(js.type & ~JS_EVENT_INIT) {
 			case JS_EVENT_BUTTON:
 				button[js.number] = js.value;
+				//printf("but %d: %d\n",js.number,js.value);
 				if(button[js.number] == 1) process_joystick(js.number);
 				break;
 			case JS_EVENT_AXIS:
 				axis[js.number] = js.value;
+				printf("axis %d: %d\n",js.number,js.value);
 				break;
 		}
 		//if (errno != EAGAIN) {
@@ -423,11 +425,11 @@ int main(int argc, char **argv)
 
 	term_puts("\nConnecting joystick...\n");
 
-
 	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
 	if ((js_fd = open(JS_DEV, O_RDONLY)) < 0) {
 		term_puts("\nFailed to connect joystick\n");
 		//exit(1);
+		return 1;
 	}
 	gettimeofday(&tm1, NULL);
 	gettimeofday(&start, NULL);
@@ -457,8 +459,7 @@ int main(int argc, char **argv)
 		if (diff >= 15 && absdiff >= 3000) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			//checkJoystick();
-			axis[3] = 32768;
+			checkJoystick();
 			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
 
 			//printf()			// for (int i = 0; i < 4; ++i) {

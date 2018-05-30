@@ -37,6 +37,8 @@ void initValues(){
   motors_off = true;
   calibration_done = false;
   no_failure = true;
+  last_rec_pkt = get_time_us();
+
 }
 
 /*------------------------------------------------------------------
@@ -61,6 +63,14 @@ const char* getCurrentState(enum states state)
    }
 }
 
+bool checkJS(){
+    return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
+}
+
+bool checkMotor(){
+    return (ae[0] || ae[1] || ae[2] || ae[3]);
+}
+
 void step(enum states *state, int c) {
     switch (*state) {
         // SAFE MODE
@@ -68,49 +78,49 @@ void step(enum states *state, int c) {
             no_failure = true;
             switch (c){
                 case '2':
-                    if (motors_off && no_failure){
+                    if (!checkMotor() && !checkJS() && no_failure){
                         *state = Manual_Mode;
                         printf("Manual_Mode Selected\n");
                     }
                     break;
 
                 case '3':
-                    if (motors_off && no_failure){
+                    if (!checkMotor() && !checkJS() && no_failure){
                         *state = Calibration_Mode;
                         printf("Calibration_Mode Selected\n");
                     }
                     break;
 
                 case '4':
-                    if (motors_off && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Yaw_Mode;
                         printf("Yaw_Mode Selected\n");
                     }
                     break;
 
                 case '5':
-                    if (motors_off && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Full_Mode;
                         printf("Full_Mode Selected\n");
                     }
                     break;
 
                 case '6':
-                    if (motors_off && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Raw_Mode;
                         printf("Raw_Mode Selected\n");
                     }
                     break;
 
                 case '7':
-                    if (motors_off && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Height_Mode;
                         printf("Height_Mode Selected\n");
                     }
                     break;
 
                 case '8':
-                    if (motors_off && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Wireless_Mode;
                         printf("Wireless_Mode Selected\n");
                     }
@@ -128,7 +138,7 @@ void step(enum states *state, int c) {
                 *state = Panic_Mode;
                 printf("Panic_Mode Selected\n");
             }
-            else if (c == '0' && motors_off){
+            else if (c == '0' && !checkMotor() && !checkJS()){
                 *state = Safe_Mode;
                 printf("Safe_Mode Selected\n");
             }
@@ -143,7 +153,7 @@ void step(enum states *state, int c) {
                 *state = Panic_Mode;
                 printf("Panic_Mode Selected\n");
             }
-            else if (c == '0' && motors_off){
+            else if (c == '0' && !checkMotor()){
                 *state = Safe_Mode;
                 printf("Safe_Mode Selected\n");
             }
@@ -157,7 +167,7 @@ void step(enum states *state, int c) {
         if (!no_failure)
           *state = Panic_Mode;
           // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
+        else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
           printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
@@ -172,7 +182,7 @@ void step(enum states *state, int c) {
         if (!no_failure)
           *state = Panic_Mode;
           // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
+        else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
           printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
@@ -187,7 +197,7 @@ void step(enum states *state, int c) {
         if (!no_failure)
           *state = Panic_Mode;
           // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
+        else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
           printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
@@ -202,7 +212,7 @@ void step(enum states *state, int c) {
         if (!no_failure)
           *state = Panic_Mode;
           // Call for Panic_Mode function required
-        else if (c == '0' && motors_off){
+        else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
           printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
@@ -214,7 +224,7 @@ void step(enum states *state, int c) {
 
 	case Panic_Mode:
         nrf_gpio_pin_toggle(RED);
-        if (c == '0' && motors_off && ((bat_volt > 1110) || (bat_volt < 650)))
+        if (c == '0' && !checkMotor() && ((bat_volt > 1110) || (bat_volt < 650)))
             *state = Safe_Mode;
 	    break;
 
@@ -476,6 +486,7 @@ void processRecMsg(){
 				printf("ERROR\n");
 				break;
 		}
+    last_rec_pkt = get_time_us();
 		slideRecMsg(1);
 	}
 
@@ -512,19 +523,6 @@ void checkMotors() {
 	}
 }
 
-// Author: Vincent Bejach
-// Safety check to verify the connection pc-drone is still active
-bool connection_drone_pc_check(enum states *state) {
-    bool connection_lost = false;
-
-    if( tx_queue.count > 150 && !connection_lost ) { // Safety check: connection drone-pc working
-        *state = Panic_Mode;
-        // Optional LED turning on?
-        connection_lost = true;
-    }
-
-    return connection_lost;
-}
 
 /*------------------------------------------------------------------
  * main -- everything you need is here :)
@@ -547,6 +545,8 @@ int main(void)
     initValues();
     dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
+  long connection_start_time = get_time_us() + 2320000;
+
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
 
@@ -554,6 +554,7 @@ int main(void)
 
 	while (!demo_done)
 	{
+      connection_lost = false;
   		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
   		processPkt();
 
@@ -577,16 +578,11 @@ int main(void)
   			processRecMsg();
   			//printf("processrecmsg\n");
 
-            /*if( tx_queue.count > 150 && !connection_lost ) { // Safety check: connection drone-pc working
-                state = Panic_Mode;
-                // Optional LED turning on?
-                connection_lost = true;
-            }*/
-
-            // Safety check: connection between drone and pc is still active
-            if(!connection_lost) {
-                connection_lost = connection_drone_pc_check(&state);
-            }
+        if((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
+          state = Panic_Mode;
+          nrf_gpio_pin_toggle(YELLOW);
+          connection_lost = true;
+        }
 
 			printf("%10ld | %2d | ", get_time_us(), state);
 			printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);

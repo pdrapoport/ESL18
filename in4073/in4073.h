@@ -63,6 +63,8 @@ uint32_t get_time_us(void);
 bool check_timer_flag(void);
 void clear_timer_flag(void);
 
+long last_rec_pkt;
+
 // GPIO
 void gpio_init(void);
 
@@ -77,6 +79,7 @@ void init_queue(queue *q);
 void enqueue(queue *q, char x);
 char dequeue(queue *q);
 void processPkt();
+bool checkJS();
 
 // UART
 #define RX_PIN_NUMBER  16

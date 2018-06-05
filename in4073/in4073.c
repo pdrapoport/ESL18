@@ -21,7 +21,7 @@ enum states state;
 
 void initValues(){
 	b = 1;
-	d = 10;
+	d = 1;
 	p = 10;
 	p1 = 10;
 	p2 = 10;
@@ -530,7 +530,7 @@ int main(void)
 	timers_init();
 	adc_init();
 	twi_init();
-	imu_init(false, 100);
+	imu_init(false, 200);
 	baro_init();
 	spi_flash_init();
 	ble_init();
@@ -541,8 +541,8 @@ int main(void)
 	initialize_integrator();
 	initialize_kalman();
 
-	int sp_filtered;
-	//int say_filtered;
+	//int sp_filtered;
+	int say_filtered;
 	uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
 
@@ -585,35 +585,36 @@ int main(void)
 		{
 			tm2 = get_time_us();
 			diff = (tm2 - tm1)/ 1000;
-			printf("%ld ", diff);
+			printf("%2ld | ", diff);
 			tm1 = tm2;
 			//get_dmp_data();
 			get_raw_sensor_data();
 
-			// printf("%10ld | %2d | ", get_time_us(), state);
+			//printf("%10ld | %2d | ", get_time_us(), state);
 			// printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
 			// printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			// printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-			// printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			// printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
-			// clear_timer_flag();
+			// printf("%6d %6d %6d \n ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+			//printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			//printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
+
             //printf("cleartimerflag\n");
 
-			printf("%ld ", get_time_us());
-			printf("%d %d %d ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			printf("%d %d %d ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-
-            //To Apply only the butterworth filter
-			sp_filtered = butterworth_filter(sp-sp_avg);
-			printf(" %d ",sp_filtered);
-			printf(" %d \n", compute_phi(sp_filtered));
+			// printf("%ld ", get_time_us());
+			// printf("%d %d %d ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			// printf("%d %d %d ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+			//
+            // //To Apply only the butterworth filter
+			// sp_filtered = butterworth_filter(sp-sp_avg);
+			// printf(" %d ",sp_filtered);
+			// printf(" %d \n", compute_phi(sp_filtered));
 
             //To Apply only the kalman filter
-			// say_filtered = butterworth_filter(say-say_avg);
-			// printf(" %d ",say_filtered);
-			// printf(" %d \n", kalman_filter(say_filtered,sp-sp_avg));
+			say_filtered = butterworth_filter(say-say_avg);
+			printf("%d | ",say_filtered);
+			printf("%d \n", kalman_filter(say_filtered,sp-sp_avg));
 
 			run_filters_and_control(&state);
+			clear_sensor_int_flag();
 		}
 
 

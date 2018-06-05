@@ -58,3 +58,7 @@ in4073/pc_terminal/js\.c
 in4073/pc_terminal/jstest\.c
 
 in4073/pc_terminal/pc-terminal
+
+in4073/pc_terminal/file\.txt
+
+in4073/_build/filters\.o

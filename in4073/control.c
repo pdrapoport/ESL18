@@ -116,7 +116,7 @@ void run_filters_and_control(enum states *state){
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
-			if(k++ % 3 == 0){
+			if(k++ % 2 == 0){
 				for (int j = 0; j<4; j++){
 					ae[j] -= 1;
 					if (ae[j] <= 0)

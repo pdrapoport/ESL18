@@ -538,11 +538,9 @@ int main(void)
 	initValues();
 	dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 	initialize_butterworth();
-	initialize_integrator();
+	//initialize_integrator();
 	initialize_kalman();
 
-	int sp_filtered;
-	//int say_filtered;
 	uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
 
@@ -551,7 +549,7 @@ int main(void)
 	while (!demo_done)
 	{
 		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
-		processPkt();
+        processPkt();
 
 		/*if (rx_queue.count) {
 		        checkMotors();
@@ -577,21 +575,21 @@ int main(void)
 			clear_timer_flag();
 			//printf("cleartimerflag\n");
 
-			//if (state == Manual_Mode)
-			//    manual_mode();
+
 		}
 
 		if (check_sensor_int_flag())
 		{
-			tm2 = get_time_us();
-			diff = (tm2 - tm1)/ 1000;
-			printf("%ld ", diff);
-			tm1 = tm2;
+            tm2 = get_time_us();
+            diff = (tm2 - tm1);
+            printf("%ld \n", diff);
+            tm1 = tm2;
+
 			//get_dmp_data();
 			get_raw_sensor_data();
 
 			// printf("%10ld | %2d | ", get_time_us(), state);
-			// printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+			// printf("%5d | %3d %3d %3d %3d | \n",axis[3],ae[0],ae[1],ae[2],ae[3]);
 			// printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
 			// printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
 			// printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
@@ -599,19 +597,28 @@ int main(void)
 			// clear_timer_flag();
             //printf("cleartimerflag\n");
 
-			printf("%ld ", get_time_us());
-			printf("%d %d %d ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			printf("%d %d %d ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+			// printf("%ld ", get_time_us());
+			// printf("%d %d %d ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			// printf("%d %d %d ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+            //
+            //
+            // printf("%d %d %d %d %d \n", say_filtered, phi_kalman, sax_filtered, theta_kalman, sr_filtered);
 
-            //To Apply only the butterworth filter
-			sp_filtered = butterworth_filter(sp-sp_avg);
-			printf(" %d ",sp_filtered);
-			printf(" %d \n", compute_phi(sp_filtered));
+            //Run Filters
+            if (state == Raw_Mode){
+                filter = say_butterworth;
+                f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
+                filter = kalman_phi;
+                f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,&filter);
 
-            //To Apply only the kalman filter
-			// say_filtered = butterworth_filter(say-say_avg);
-			// printf(" %d ",say_filtered);
-			// printf(" %d \n", kalman_filter(say_filtered,sp-sp_avg));
+                filter = sax_butterworth;
+                f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
+                filter = kalman_theta;
+                f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
+
+                filter = sr_butterworth;
+                f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
+            }
 
 			run_filters_and_control(&state);
 		}

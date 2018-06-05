@@ -22,6 +22,8 @@ int sp_sum = 0, sq_sum = 0, sr_sum = 0;
 int sax_sum = 0, say_sum = 0, saz_sum = 0;
 int phi_sum = 0, theta_sum = 0, psi_sum = 0;
 
+
+
 void update_motors(void)
 {
 	motor[0] = ae[0];
@@ -96,14 +98,32 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Full_Mode:
-			pitch = p2 * (p1 * (axis[1]*30 - (theta-theta_avg)) - (sq-sq_avg));
-			roll = p2 * (p1 * (axis[0]*30 - (phi-phi_avg)) - (sp-sp_avg));
+			pitch = p1 * (axis[1]*30 - (theta-theta_avg)) - p2*(sq-sq_avg);
+			roll = p1 * (axis[0]*30 - (phi-phi_avg)) - p2*(sp-sp_avg);
 			yaw = p * (axis[2]*30 - (sr-sr_avg));
 			lift = axis[3]*30;
 			break;
 
 		case Raw_Mode:
-			//insert control here
+            // Run Filters
+            // filter = say_butterworth;
+            // f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
+            //filter = kalman_phi;
+            //f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,kalman_phi);
+
+            // filter = sax_butterworth;
+            // f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
+            // filter = kalman_theta;
+            // f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
+
+            // filter = sr_butterworth;
+            // f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
+
+            //Control with filtered Data
+            pitch = p1 * (axis[1]*30 - f_d.theta_kalman) - p2*(sq-sq_avg);
+            roll = p1 * (axis[0]*30 - f_d.phi_kalman) - p2*(sp-sp_avg);
+            yaw = p * (axis[2]*30 - f_d.sr_filtered);
+            lift = axis[3]*30;
 			break;
 
 		case Height_Mode:
@@ -117,7 +137,7 @@ void run_filters_and_control(enum states *state){
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
-			if(k++ % 10 == 0){
+			if(k++ % 3 == 0){
 				for (int j = 0; j<4; j++){
 					ae[j] -= 1;
 					if (ae[j] <= 0)
@@ -129,7 +149,7 @@ void run_filters_and_control(enum states *state){
 			break;
 	}
 
-	if (*state != Panic_Mode){ 
+	if (*state != Panic_Mode){
 		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
 		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
 		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C

@@ -580,7 +580,7 @@ int main(void)
     initValues();
     dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
-  long connection_start_time = get_time_us() + 2320000;
+  long connection_start_time = get_time_us() + 2350000;
 
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
@@ -601,7 +601,7 @@ int main(void)
   			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
   			adc_request_sample();
-            if (bat_volt < 500) { // Safety check: battery voltage
+            if (bat_volt < 1060) { // Safety check: battery voltage
                 state = Panic_Mode;
             }
   			//printf("adc req\n");
@@ -623,16 +623,9 @@ int main(void)
 			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
 			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
             printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
+			printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
   			clear_timer_flag();
-  			//printf("cleartimerflag\n");
 
-
-            //if (state == Manual_Mode)
-            //    manual_mode();
-            if (bat_volt < 500) {
-                state = Panic_Mode;
-            }
   		}
 
   		if (check_sensor_int_flag()) //10 ms

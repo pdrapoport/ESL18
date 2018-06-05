@@ -208,7 +208,8 @@ int 	rs232_putchar(char c)
 
 void js_open(){
 	term_puts("\nConnecting joystick...\n");
-	fd_js = open(JS_DEV_RES, O_RDONLY);
+	fd_js = open(JS_DEV, O_RDONLY);
+	//fd_js = open(JS_DEV_RES, O_RDONLY);
 	assert(fd_js >= 0);
 	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 	FD_SET(fd_js, &set);

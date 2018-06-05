@@ -425,7 +425,7 @@ int main(int argc, char **argv)
 
 
 	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
-	if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
+	if ((js_fd = open(JS_DEV, O_RDONLY)) < 0) {
 		term_puts("\nFailed to connect joystick\n");
 		//exit(1);
 	}
@@ -454,7 +454,7 @@ int main(int argc, char **argv)
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
 		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff >= 15 && absdiff >= 3000) {
+		if (diff >= 20 && absdiff >= 3000) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			checkJoystick();

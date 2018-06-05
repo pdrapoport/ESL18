@@ -23,8 +23,8 @@ void initValues(){
   b = 1;
   d = 10;
   p = 10;
-  p1 = 10;
-  p2 = 10;
+  p1 = 0;
+  p2 = 100;
 
   demo_done = false;
 	state = Safe_Mode;
@@ -323,7 +323,7 @@ void process_key(uint8_t c){
 			break;
 		case 'k':
 			//roll, pitch control p1 down
-      if(p1 > 1) p1-=1;
+      if(p1 > 0) p1-=1;
 			break;
 		case 'o':
 			//roll, pitch control p2 up
@@ -571,7 +571,7 @@ int main(void)
 	ble_init();
 	initProtocol();
     initValues();
-    dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+    //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
@@ -605,7 +605,7 @@ int main(void)
 			printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
 			printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
             printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
+			printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
   			clear_timer_flag();
   			//printf("cleartimerflag\n");
 

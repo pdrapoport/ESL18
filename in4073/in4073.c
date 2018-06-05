@@ -23,11 +23,11 @@ void initValues(){
   b = 1;
   d = 10;
   p = 10;
-  p1 = 0;
+  p1 = 50;
   p2 = 100;
 
   demo_done = false;
-	state = Safe_Mode;
+  state = Safe_Mode;
   sp_avg = 0;
   sq_avg = 0;
   sr_avg = 0;
@@ -602,7 +602,7 @@ int main(void)
 
   			adc_request_sample();
             if (bat_volt < 1060) { // Safety check: battery voltage
-                state = Panic_Mode;
+                //state = Panic_Mode;
             }
   			//printf("adc req\n");
   			read_baro();

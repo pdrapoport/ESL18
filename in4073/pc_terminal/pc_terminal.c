@@ -210,7 +210,7 @@ void js_open(){
 	term_puts("\nConnecting joystick...\n");
 	fd_js = open(JS_DEV, O_RDONLY);
 	//fd_js = open(JS_DEV_RES, O_RDONLY);
-	assert(fd_js >= 0);
+	//assert(fd_js >= 0);
 	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 	//FD_SET(fd_js, &set);
 	term_puts("JS Connected\n");
@@ -468,15 +468,15 @@ int main(int argc, char **argv)
 
 
 	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
-	if ((js_fd = open(JS_DEV, O_RDONLY)) < 0) {
+	if ((fd_js = open(JS_DEV, O_RDONLY)) < 0) {
 		term_puts("\nFailed to connect joystick\n");
 		//exit(1);
 	}
 	gettimeofday(&tm1, NULL);
 	gettimeofday(&start, NULL);
 
-	
-	
+
+
 	/* discard any incoming text
 	 */
 	//while ((c = rs232_getchar_nb()) != -1)
@@ -501,7 +501,7 @@ int main(int argc, char **argv)
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			js_conn = checkJoystick();
 			//if(js_conn && prev_js_conn)
-				sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
+			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
 			// else if(!js_conn && prev_js_conn){
 			// 	//send panic mode message
 			// 	process_key(49);
@@ -522,7 +522,7 @@ int main(int argc, char **argv)
 
 	term_exitio();
 	rs232_close();
-	close(js_fd);
+	close(fd_js);
 	term_puts("\n<exit>\n");
 
 	return 0;

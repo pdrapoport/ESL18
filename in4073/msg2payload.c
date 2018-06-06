@@ -119,25 +119,22 @@ void drone2pc(uint8_t *msg){
  * Ex: recChar = [1 2 3 4 5 '\0'] -> slide(2) -> recChar = [3 4 5 '\0' '\0'? '\0'?]
  * The characters marked ? are irrelevant because they are situated after the first '\0' and thus will never be processed. They will also be overwritten by the next characters being added to recChar
  */
-void slideMsg(uint8_t i) {
+uint8_t slideMsg(uint8_t i, uint8_t local_readIndex) {
     uint16_t count = 0;
     //uint8_t tmp[MAXMSG];
 
     // Disable interrupts
 
-    // for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
-    //     tmp[count-i] = recChar[count];
-    // }
-    // // Store the remaining characters back into recChar
-    // memcpy(recChar, tmp, MAXMSG + 1); //may cause buffer overflow according to dudes in stackoverflow
     for (count = i; count < MAXMSG; count++) {
         recChar[count - i] = recChar[count];
     }
 
-    readIndex = 0;
+    //readIndex = 0;
     buffCount = buffCount - i;
 
     // Enable interrupts back
+
+    return 0;
 
     // Note: I think doing it like this avoids the need to allocate a temporary buffer for the packet to process: this should prevent a race condition between interrupt and the sliding function. It is the only place where we need to write to recChar, so there shouldn't be any problem for all the other interactions with this array (reads in the processPkt function)
 }

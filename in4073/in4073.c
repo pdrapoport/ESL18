@@ -413,40 +413,45 @@ void process_key(uint8_t c){
   * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
   * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
   */
- void processPkt() {
+int processPkt() {
+  int local_readIndex = readIndex; // 
+
   receivePkt();
-  while (readIndex < buffCount) {
+  while (local_readIndex < buffCount) {
     switch (packState) {
       case wait:
         //printf("\nWAIT!\n");
         //printf("READ %02X\n", recChar[readIndex]);
-        if (recChar[readIndex] == STARTBYTE) {
+        if (recChar[local_readIndex] == STARTBYTE) {
           //printf("START\n");
-          ++readIndex;
+          ++local_readIndex;
           packState = first_byte_received;
         }
         else {
-          slideMsg(1);
+          local_readIndex = slideMsg(1, local_readIndex);
         }
         break;
+
       case first_byte_received:
-        msglen = cmd2len(recChar[readIndex++]);
+        msglen = cmd2len(recChar[local_readIndex++]);
         packState = receiveMsg;
         if (msglen == 0) {
-          slideMsg(1);
+          local_readIndex = slideMsg(1, local_readIndex);
           packState = wait;
         }
         //printf("\nFIRST!\n");
         break;
+
       case receiveMsg:
-        if (readIndex < msglen - 1) {
-          ++readIndex;
+        if (local_readIndex < msglen - 1) {
+          ++local_readIndex;
         }
         else {
           packState = CRC_Check;
         }
         //printf("\nRECV\n");
         break;
+
       case CRC_Check:
         if (checkCRC(recChar, msglen)) {
           receivedMsg[++recBuff] = getPayload(msglen);
@@ -455,13 +460,15 @@ void process_key(uint8_t c){
           //     printf("%02X ", recChar[k]);
           // }
           // printf("\n");
-          processRecMsg();
+
+          processRecMsg(); 
+
           // if (buffCount > 13) {
           //     printf("oldStartByte: %02X\n", recChar[13]);
           // }
-          // printf("%d/%d -> ", readIndex, buffCount);
-          slideMsg(msglen);
-          // printf("%d/%d\n", readIndex, buffCount);
+          // printf("%d/%d -> ", local_readIndex, buffCount);
+          local_readIndex = slideMsg(msglen, local_readIndex);
+          // printf("%d/%d\n", local_readIndex, buffCount);
           // if (buffCount > 0) {
           //     printf("currentStartByte: %02X\n", recChar[0]);
           // }
@@ -469,11 +476,12 @@ void process_key(uint8_t c){
         }
         else {
           //printf("\nCRC FAIL!\n");
-          slideMsg(1);
+          local_readIndex = slideMsg(1, local_readIndex);
           packState = wait;
         }
         // printf("\nCRC!\n");
         break;
+
       case panic:
         //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
         //panic_on = true;
@@ -482,6 +490,7 @@ void process_key(uint8_t c){
         packState = panic;
     }
   }
+  return local_readIndex;
 }
 
 void processRecMsg(){
@@ -495,40 +504,37 @@ void processRecMsg(){
 			msg[j] = receivedMsg[1].msg[j];
 		}
 
-		switch(idCmd){
-			case PWMODE:
+	    switch(idCmd){
+		    case PWMODE:
                 //printf("PWMODE\n");
-                changeMode(msg);
-				break;
-			case PWMOV:
-				//printf("PWMOV\n");
-				changeMov(msg);
-				break;
-			case DWLOG:
+                process_key((uint8_t)msg[0]);
+			    break;
+		    case PWMOV:
+			    //printf("PWMOV\n");
+			    changeMov(msg);
+			    break;
+		    case DWLOG:
 
-				break;
-			case DWMODE:
+			    break;
+		    case DWMODE:
 
-				break;
-			case PRMODE:
+			    break;
+		    case PRMODE:
 
-				break;
-			case PWKB:
-				changeKbParam(msg);
-				break;
-			default:
-				printf("ERROR\n");
-				break;
-		}
-    last_rec_pkt = get_time_us();
-		slideRecMsg(1);
+			    break;
+		    case PWKB:
+			    process_key((uint8_t)msg[0]);
+			    break;
+		    default:
+			    printf("ERROR\n");
+			    break;
+	    }
+        last_rec_pkt = get_time_us();
+	    slideRecMsg(1);
 	}
 
 }
 
-void changeMode(uint8_t *msg){
-   process_key((uint8_t)msg[0]);
-}
 
 void changeMov(uint8_t *msg){
 	// int j = 0;
@@ -544,9 +550,6 @@ void changeMov(uint8_t *msg){
     apply_offset_js_axis();
 }
 
-void changeKbParam(uint8_t *msg){
-	process_key((uint8_t)msg[0]);
-}
 
 void checkMotors() {
 	uint8_t data[8];
@@ -590,7 +593,7 @@ int main(void)
 	{
       connection_lost = false;
   		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
-  		processPkt();
+  		readIndex = processPkt();
 
   		/*if (rx_queue.count) {
   			checkMotors();
@@ -609,7 +612,7 @@ int main(void)
   			//printf("read baro\n");
 
   			//printf("test %d\n",i++);
-  			processRecMsg();
+  			//processRecMsg();
   			//printf("processrecmsg\n");
 
         if((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {

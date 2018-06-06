@@ -42,6 +42,8 @@ enum states {
   Wireless_Mode         // Mode 8
 } state;
 
+int16_t axis_offset[4];
+
 // Control
 int16_t motor[4],ae[4];
 int16_t axis[4];
@@ -98,6 +100,8 @@ uint32_t get_time_us(void);
 bool check_timer_flag(void);
 void clear_timer_flag(void);
 
+long last_rec_pkt;
+
 // GPIO
 void gpio_init(void);
 
@@ -112,6 +116,7 @@ void init_queue(queue *q);
 void enqueue(queue *q, char x);
 char dequeue(queue *q);
 void processPkt();
+bool checkJS();
 
 // UART
 #define RX_PIN_NUMBER  16

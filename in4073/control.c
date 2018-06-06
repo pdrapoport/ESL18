@@ -156,7 +156,7 @@ void run_filters_and_control(enum states *state){
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
-			if(k++ % 3 == 0){
+			if(k++ % 2 == 0){
 				for (int j = 0; j<4; j++){
 					ae[j] -= 1;
 					if (ae[j] <= 0)
@@ -176,10 +176,10 @@ void run_filters_and_control(enum states *state){
 
 		for (int i = 0; i < 4; i++){
 			//ae[i] = ae[i]*6; //Scaling Factor
-			if (ae[i] >= 500)
-				ae[i] = 500;
-			else if (lift > 5910 && ae[i] <= 152)
-				ae[i] = 152;
+			if (ae[i] >= 800)
+				ae[i] = 800;
+			else if (lift > 5910 && ae[i] <= 200)
+				ae[i] = 200;
 			else if (ae[i]<0)
 				ae[i] = 0;
 		}

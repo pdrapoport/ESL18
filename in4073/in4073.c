@@ -413,8 +413,8 @@ void process_key(uint8_t c){
   * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
   * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
   */
-int processPkt() {
-  int local_readIndex = readIndex; // 
+uint8_t processPkt() {
+  uint8_t local_readIndex = readIndex; // Local copy of global variable readIndex, to increase execution speed
 
   receivePkt();
   while (local_readIndex < buffCount) {

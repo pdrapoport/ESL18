@@ -80,7 +80,7 @@ typedef struct {
 void init_queue(queue *q);
 void enqueue(queue *q, char x);
 char dequeue(queue *q);
-int processPkt();
+uint8_t processPkt();
 bool checkJS();
 
 // UART

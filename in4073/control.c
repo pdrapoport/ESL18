@@ -27,7 +27,7 @@ void update_motors(void)
 	motor[1] = ae[1];
 	motor[2] = ae[2];
 	motor[3] = ae[3];
-	motors_off = true;
+	//motors_off = true;
 	for (int i = 0; i < 4; ++i) {
 		motors_off &= (motor[i] == 0);
 	}
@@ -122,7 +122,7 @@ void run_filters_and_control(enum states *state){
 				}
 			}
 			//check if the motor has turned off
-			if(!motor[0] && !motor[1] && !motor[2] && !motor[3]) {no_failure = true;motors_off = true;}
+			if(!checkMotor()) {no_failure = true;motors_off = true;}
 			break;
 	}
 

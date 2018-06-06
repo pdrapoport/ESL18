@@ -53,11 +53,10 @@ int16_t sp_avg, sq_avg, sr_avg;
 int16_t sax_avg, say_avg, saz_avg;
 int16_t phi_avg, theta_avg, psi_avg;
 bool calibration_done; // Update after the calibration is done
-bool motors_off; // Update according to the readings
 void run_filters_and_control();
 void initValues();
 int b, d, p, p1, p2;
-bool no_failure;
+
 
 
 // Timers
@@ -77,7 +76,7 @@ void gpio_init(void);
 typedef struct {
 	uint8_t Data[QUEUE_SIZE];
 	uint16_t first,last;
-  	uint16_t count;
+  uint16_t count;
 } queue;
 void init_queue(queue *q);
 void enqueue(queue *q, char x);
@@ -145,5 +144,10 @@ void changeMode();
 void changeMov(uint8_t *msg);
 void changeKbParam(uint8_t *msg);
 void sendTelemetryPacket();
+
+// SAFETY
+bool connection_lost;
+bool motors_off; // Update according to the readings
+bool no_failure;
 
 #endif // IN4073_H__

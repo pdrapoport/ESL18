@@ -95,9 +95,9 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Full_Mode:
-			pitch = p2 * (p1 * (axis[1]*30 - (theta-theta_avg)) - (sq-sq_avg));
-			roll = p2 * (p1 * (axis[0]*30 - (phi-phi_avg)) - (sp-sp_avg));
-			yaw = p * (axis[2]*30 - (sr-sr_avg));
+			pitch = p1 * (axis[1]/10 - (theta-theta_avg)) + p2*(sq-sq_avg);
+			roll = p1 * (axis[0]/10 - (phi-phi_avg)) - p2*(sp-sp_avg);
+			yaw = p * (axis[2]/100 - (sr-sr_avg));
 			lift = axis[3]*30;
 			break;
 
@@ -136,10 +136,10 @@ void run_filters_and_control(enum states *state){
 
 		for (int i = 0; i < 4; i++){
 			//ae[i] = ae[i]*6; //Scaling Factor
-			if (ae[i] >= 500)
-				ae[i] = 500;
-			else if (lift > 5910 && ae[i] <= 152)
-				ae[i] = 152;
+			if (ae[i] >= 800)
+				ae[i] = 800;
+			else if (lift > 5910 && ae[i] <= 200)
+				ae[i] = 200;
 			else if (ae[i]<0)
 				ae[i] = 0;
 		}

@@ -23,11 +23,11 @@ void initValues(){
   b = 1;
   d = 10;
   p = 10;
-  p1 = 10;
-  p2 = 10;
+  p1 = 50;
+  p2 = 100;
 
   demo_done = false;
-	state = Safe_Mode;
+  state = Safe_Mode;
   sp_avg = 0;
   sq_avg = 0;
   sr_avg = 0;
@@ -334,7 +334,7 @@ void process_key(uint8_t c){
 			break;
 		case 'k':
 			//roll, pitch control p1 down
-      if(p1 > 1) p1-=1;
+      if(p1 > 0) p1-=1;
 			break;
 		case 'o':
 			//roll, pitch control p2 up
@@ -578,7 +578,7 @@ int main(void)
 	ble_init();
 	initProtocol();
     initValues();
-    dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+    //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
   long connection_start_time = get_time_us() + 2350000;
 
@@ -602,7 +602,7 @@ int main(void)
 
   			adc_request_sample();
             if (bat_volt < 1060) { // Safety check: battery voltage
-                state = Panic_Mode;
+                //state = Panic_Mode;
             }
   			//printf("adc req\n");
   			read_baro();

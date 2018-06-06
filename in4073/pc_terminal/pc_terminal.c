@@ -403,7 +403,7 @@ void printTelemetry(uint8_t *msg) {
 	fprintf(stderr, "|");
 	for(int i = 0; i < 3; ++i) {
 		for (int j = 0; j < 3; ++j) {
-			fprintf(stderr, " %4d ", combineByte(msg[14 + 6 * j + 2 * i], msg[14 + 6 * j + 2 * i + 1]));
+			fprintf(stderr, " %6d ", combineByte(msg[14 + 6 * i + 2 * j], msg[14 + 6 * i + 2 * j + 1]));
 		}
 		fprintf(stderr, "|");
 	}
@@ -453,7 +453,6 @@ void processRecMsg(){
 		}
 		slideRecMsg(1);
 	}
-
 }
 
 
@@ -508,7 +507,7 @@ void processPkt() {
 		 packState = wait;
 	   }
 	   else {
-		 fprintf(stderr, "\nCRC FAIL!\n");
+		 fprintf(stderr, "CRC FAIL!\n");
 		 slideMsg(1);
 		 packState = wait;
 	   }

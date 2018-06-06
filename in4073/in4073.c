@@ -511,6 +511,7 @@ void changeKbParam(uint8_t *msg){
 void sendTelemetryPacket() {
     uint8_t packet[42];
     uint32_t timestamp = get_time_us();
+    int16_t tmp;
     packet[0] = fourthByte(timestamp);
     packet[1] = thirdByte(timestamp);
     packet[2] = secondByte(timestamp);
@@ -521,24 +522,33 @@ void sendTelemetryPacket() {
         packet[6 + 2 * i] = lowByte(ae[i]);
         packet[6 + 2 * i + 1] = highByte(ae[i]);
     }
-    packet[14] = highByte(phi_avg);
-    packet[15] = lowByte(phi_avg);
-    packet[16] = highByte(theta_avg);
-    packet[17] = lowByte(theta_avg);
-    packet[18] = highByte(psi_avg);
-    packet[19] = lowByte(psi_avg);
-    packet[20] = highByte(sp_avg);
-    packet[21] = lowByte(sp_avg);
-    packet[22] = highByte(sq_avg);
-    packet[23] = lowByte(sq_avg);
-    packet[24] = highByte(sr_avg);
-    packet[25] = lowByte(sr_avg);
-    packet[26] = highByte(sax_avg);
-    packet[27] = lowByte(sax_avg);
-    packet[28] = highByte(say_avg);
-    packet[29] = lowByte(say_avg);
-    packet[30] = highByte(saz_avg);
-    packet[31] = lowByte(saz_avg);
+    tmp = phi - phi_avg;
+    packet[14] = highByte(tmp);
+    packet[15] = lowByte(tmp);
+    tmp = theta - theta_avg;
+    packet[16] = highByte(tmp);
+    packet[17] = lowByte(tmp);
+    tmp = psi - psi_avg;
+    packet[18] = highByte(tmp);
+    packet[19] = lowByte(tmp);
+    tmp = sp - sp_avg;
+    packet[20] = highByte(tmp);
+    packet[21] = lowByte(tmp);
+    tmp = sq - sq_avg;
+    packet[22] = highByte(tmp);
+    packet[23] = lowByte(tmp);
+    tmp = sr - sr_avg;
+    packet[24] = highByte(tmp);
+    packet[25] = lowByte(tmp);
+    tmp = sax - sax_avg;
+    packet[26] = highByte(tmp);
+    packet[27] = lowByte(tmp);
+    tmp = say - say_avg;
+    packet[28] = highByte(tmp);
+    packet[29] = lowByte(tmp);
+    tmp = saz - saz_avg;
+    packet[30] = highByte(tmp);
+    packet[31] = lowByte(tmp);
     packet[32] = highByte(bat_volt);
     packet[33] = lowByte(bat_volt);
     packet[34] = fourthByte(temperature);
@@ -551,7 +561,7 @@ void sendTelemetryPacket() {
     packet[41] = lowByte(pressure);
     uint8_t *msg = makePayload(DWTEL, packet);
     for(int i = 0; i < 48; ++i) {
-        printf("%c", msg[i]);
+        uart_put(msg[i]);
     }
     free(msg);
 }

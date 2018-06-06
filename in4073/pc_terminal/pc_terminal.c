@@ -97,7 +97,7 @@ int     term_getchar()
 #include <sys/select.h>
 
 int serial_device = 0;
-int fd_RS232, js_fd;
+int fd_RS232, fd_js;
 fd_set set;
 struct js_event js;
 
@@ -207,6 +207,17 @@ int     rs232_putchar(char c)
 	assert(result == 1);
 	return result;
 }
+
+void js_open(){
+	term_puts("\nConnecting joystick...\n");
+	fd_js = open(JS_DEV, O_RDONLY);
+	//fd_js = open(JS_DEV_RES, O_RDONLY);
+	//assert(fd_js >= 0);
+	fcntl(fd_js, F_SETFL, O_NONBLOCK);
+	//FD_SET(fd_js, &set);
+	term_puts("JS Connected\n");
+}
+
 int pc2drone(uint8_t *msg){
 	int result;
 	int msglen = cmd2len(msg[1]);
@@ -378,23 +389,52 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
 	free(payload);
 }
 
-void checkJoystick() {
-	while (read(js_fd,&js,sizeof(struct js_event)) ==
-	       sizeof(struct js_event))  {
-		switch(js.type & ~JS_EVENT_INIT) {
-		case JS_EVENT_BUTTON:
-			button[js.number] = js.value;
-			if(button[js.number] == 1) process_joystick(js.number);
-			break;
-		case JS_EVENT_AXIS:
-			axis[js.number] = js.value;
-			break;
-		}
-		//if (errno != EAGAIN) {
-		//	perror("\njs: error reading (EAGAIN)");
-		//	exit (1);
-		//}
-	}
+bool checkJoystick() {
+    // static int i =0;
+    // FD_SET(fd_js,&set);
+    // select(fd_js + 1, &set,NULL,NULL,&timeout);
+    // if(FD_ISSET(fd_js,&set)) {
+    //     if (read(fd_js,&js,sizeof(struct js_event)) ==
+    //             sizeof(struct js_event))  {
+    //         switch(js.type & ~JS_EVENT_INIT) {
+    //         case JS_EVENT_BUTTON:
+    //             button[js.number] = js.value;
+    //             //printf("but %d: %d\n",js.number,js.value);
+    //             //if(button[js.number] == 1) process_joystick(js.number);
+    //             break;
+    //         case JS_EVENT_AXIS:
+    //             axis[js.number] = js.value;
+    //             //printf("axis %d: %d\n",js.number,js.value);
+    //             break;
+    //         }
+    //         i = 0;
+
+    //         //if (errno != EAGAIN) {
+    //         //	perror("\njs: error reading (EAGAIN)");
+    //         //	exit (1);
+    //         //}
+    //     }
+    //     i++;
+    // }
+    // if(i>2) {
+    //     //fprintf(stderr,"\n Joystick Disconnected\n");
+    //     return false;
+    // }
+        while (read(fd_js,&js,sizeof(struct js_event)) ==
+                sizeof(struct js_event))  {
+            switch(js.type & ~JS_EVENT_INIT) {
+            case JS_EVENT_BUTTON:
+                button[js.number] = js.value;
+                //printf("but %d: %d\n",js.number,js.value);
+                if(button[js.number] == 1) process_joystick(js.number);
+                break;
+            case JS_EVENT_AXIS:
+                axis[js.number] = js.value;
+                //printf("axis %d: %d\n",js.number,js.value);
+                break;
+            }
+}
+    return true;
 }
 
 /*----------------------------------------------------------------
@@ -410,6 +450,8 @@ int main(int argc, char **argv)
 	long long diff;
 	long long absdiff;
 	bool exit = false;
+	bool js_conn = true;
+	// bool prev_js_conn = true;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
@@ -419,6 +461,7 @@ int main(int argc, char **argv)
 
 	term_initio();
 	rs232_open();
+	js_open();
 
 	term_puts("Type ^C to exit\n");
 	initProtocol();
@@ -427,14 +470,14 @@ int main(int argc, char **argv)
 
 
 	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
-	if ((js_fd = open(JS_DEV, O_RDONLY)) < 0) {
+	if ((fd_js = open(JS_DEV, O_RDONLY)) < 0) {
 		term_puts("\nFailed to connect joystick\n");
 		//exit(1);
 	}
 	gettimeofday(&tm1, NULL);
 	gettimeofday(&start, NULL);
 
-	fcntl(js_fd, F_SETFL, O_NONBLOCK);
+
 
 	/* discard any incoming text
 	 */
@@ -444,8 +487,7 @@ int main(int argc, char **argv)
 	/* send & receive
 	 */
 
-
-	for (;; )
+	for (;;)
 	{
 		if ((c = term_getchar_nb()) != -1) {
 			fprintf(stderr, "char: %c\n",c);
@@ -456,13 +498,17 @@ int main(int argc, char **argv)
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
 		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff >= 15 && absdiff >= 3000) {
+		if (diff >= 20 && absdiff >= 3000) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			//checkJoystick();
-			axis[3] = -32767;
+			js_conn = checkJoystick();
+			//if(js_conn && prev_js_conn)
 			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
-
+			// else if(!js_conn && prev_js_conn){
+			// 	//send panic mode message
+			// 	process_key(49);
+			// 	prev_js_conn = false;
+			// }
 			//printf()			// for (int i = 0; i < 4; ++i) {
 			//      axis[i]++;
 			// }
@@ -478,9 +524,7 @@ int main(int argc, char **argv)
 
 	term_exitio();
 	rs232_close();
-	close(js_fd);
-	fclose(fp);
-
+	close(fd_js);
 	term_puts("\n<exit>\n");
 
 	return 0;

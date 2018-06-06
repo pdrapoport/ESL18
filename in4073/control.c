@@ -11,8 +11,27 @@
  */
 
 #include "in4073.h"
-#include "math.h"
+//#include "math.h"
 
+// From http://www.pertinentdetail.org/sqrt
+typedef unsigned uint32;
+
+#define iter1(N) \
+    try = root + (1 << (N)); \
+    if (n >= try << (N))   \
+    {   n -= try << (N);   \
+        root |= 2 << (N); \
+    }
+
+uint32_t sqrt_2(uint32_t n)
+{
+    uint32_t root = 0, try;
+    iter1 (15);    iter1 (14);    iter1 (13);    iter1 (12);
+    iter1 (11);    iter1 (10);    iter1 ( 9);    iter1 ( 8);
+    iter1 ( 7);    iter1 ( 6);    iter1 ( 5);    iter1 ( 4);
+    iter1 ( 3);    iter1 ( 2);    iter1 ( 1);    iter1 ( 0);
+    return root >> 1;
+}
 
 //Variables for calibration
 int16_t sp_array[64], sq_array[64], sr_array[64];
@@ -21,6 +40,8 @@ int i = 0;
 int sp_sum = 0, sq_sum = 0, sr_sum = 0;
 int sax_sum = 0, say_sum = 0, saz_sum = 0;
 int phi_sum = 0, theta_sum = 0, psi_sum = 0;
+
+
 
 void update_motors(void)
 {
@@ -96,14 +117,32 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Full_Mode:
-			pitch = p2 * (p1 * (axis[1] - (theta-theta_avg)) - (sq-sq_avg));
-			roll = p2 * (p1 * (axis[0] - (phi-phi_avg)) - (sp-sp_avg));
-			yaw = p * (axis[2] - (sr-sr_avg));
+			pitch = p1 * (axis[1]/10 - (theta-theta_avg)) + p2*(sq-sq_avg);
+			roll = p1 * (axis[0]/10 - (phi-phi_avg)) - p2*(sp-sp_avg);
+			yaw = p * (axis[2]/100 - (sr-sr_avg));
 			lift = axis[3]*30;
 			break;
 
 		case Raw_Mode:
-			//insert control here
+            // Run Filters
+            // filter = say_butterworth;
+            // f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
+            //filter = kalman_phi;
+            //f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,kalman_phi);
+
+            // filter = sax_butterworth;
+            // f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
+            // filter = kalman_theta;
+            // f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
+
+            // filter = sr_butterworth;
+            // f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
+
+            //Control with filtered Data
+            pitch = p1 * (axis[1]/10 - f_d.theta_kalman) + p2*(sq-sq_avg);
+            roll = p1 * (axis[0]/10 - f_d.phi_kalman) - p2*(sp-sp_avg);
+            yaw = p * (axis[2]/100 - f_d.sr_filtered);
+            lift = axis[3]*30;
 			break;
 
 		case Height_Mode:
@@ -117,7 +156,7 @@ void run_filters_and_control(enum states *state){
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
-			if(k++ % 10 == 0){
+			if(k++ % 2 == 0){
 				for (int j = 0; j<4; j++){
 					ae[j] -= 1;
 					if (ae[j] <= 0)
@@ -130,22 +169,22 @@ void run_filters_and_control(enum states *state){
 	}
 
 	if (*state != Panic_Mode){
-		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
-		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
-		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
-		ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
+		ae[0] = sqrt_2((20*pitch + 10*lift - yaw)/(40));  // A
+		ae[1] = sqrt_2((yaw + 10*lift - 20*roll)/(40));  // B
+		ae[2] = sqrt_2((-20*pitch + 10*lift - yaw)/(40)); // C
+		ae[3] = sqrt_2((yaw + 10*lift + 20*roll)/(40));  // D
 
 		for (int i = 0; i < 4; i++){
 			//ae[i] = ae[i]*6; //Scaling Factor
-			if (ae[i] >= 500)
-				ae[i] = 500;
-			else if (lift > 5910 && ae[i] <= 152)
-				ae[i] = 152;
+			if (ae[i] >= 800)
+				ae[i] = 800;
+			else if (lift > 5910 && ae[i] <= 200)
+				ae[i] = 200;
 			else if (ae[i]<0)
 				ae[i] = 0;
 		}
 
-		//printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);
+		//printf("ae_0 = %6ld | ae_2 = %6ld | ae_2 = %6ld | ae_3 = %6ld\n", sqrt_2(100), sqrt_2(222), sqrt_2(450), sqrt_2(10000));
 	}
 	update_motors();
 }

@@ -127,19 +127,27 @@ void run_filters_and_control(enum states *state){
 	}
 
 	if (*state != Panic_Mode){
-		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
-		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
-		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
-		ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
+		if(axis[3] >= 10){
+			ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
+			ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
+			ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
+			ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
 
-		for (int i = 0; i < 4; i++){
-			//ae[i] = ae[i]*6; //Scaling Factor
-			if (ae[i] >= 800)
-				ae[i] = 800;
-			else if (lift > 5910 && ae[i] <= 200)
-				ae[i] = 200;
-			else if (ae[i]<0)
-				ae[i] = 0;
+			for (int i = 0; i < 4; i++){
+				//ae[i] = ae[i]*6; //Scaling Factor
+				if (ae[i] >= 800)
+					ae[i] = 800;
+				else if (lift > 5910 && ae[i] <= 200)
+					ae[i] = 200;
+				else if (ae[i]<0)
+					ae[i] = 0;
+			}
+		}
+		else {
+			ae[0] = 0;
+			ae[1] = 0;
+			ae[2] = 0;
+			ae[3] = 0;
 		}
 
 		//printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);

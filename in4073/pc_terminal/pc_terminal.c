@@ -16,6 +16,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include "msgprocess.h"
+#include <errno.h>
 
 #include "joystick.h"
 
@@ -94,7 +95,6 @@ int	term_getchar()
 #include <sys/stat.h>
 #include <sys/select.h>
 
-int serial_device = 0;
 int fd_RS232, fd_js;
 fd_set set;
 struct js_event	js;
@@ -208,16 +208,14 @@ void js_open(){
 	term_puts("\nConnecting joystick...\n");
 	fd_js = open(JS_DEV, O_RDONLY);
 	//fd_js = open(JS_DEV_RES, O_RDONLY);
-	//assert(fd_js >= 0);
+	assert(fd_js >= 0);
 	fcntl(fd_js, F_SETFL, O_NONBLOCK);
-	//FD_SET(fd_js, &set);
-	term_puts("JS Connected\n");
+	term_puts("Joystick connected\n");
 }
 
 int pc2drone(uint8_t *msg){
     int result;
     int msglen = cmd2len(msg[1]);
-	//fprintf(stderr,"msglen: %d\n",msglen);
 	do {
 		result = (int) write(fd_RS232, msg, msglen);
 	} while (result == 0);
@@ -230,30 +228,47 @@ void process_joystick(uint8_t but){
 	uint8_t msg[PWKBLEN - ADDBYTES];
 	uint8_t *payload;
 	switch(but){
+		//Panic mode
 		case 0:
 			msg[0] = '1';
 			break;
+		
+		//Safe mode
 		case 1:
 			msg[0] = '0';
 			break;
+		
+		//Calibration mode
 		case 2:
 			msg[0] = '3';
 			break;
+		
+		//Manual mode
 		case 6:
 			msg[0] = '2';
 			break;
+		
+		//Yaw control mode
 		case 7:
 			msg[0] = '4';
 			break;
+		
+		//Full control mode
 		case 8:
 			msg[0] = '5';
 			break;
+		
+		//Raw mode
 		case 9:
 			msg[0] = '6';
 			break;
+		
+		//Height control mode
 		case 10:
 			msg[0] = '7';
 			break;
+		
+		//Wireless mode
 		case 11:
 			msg[0] = '8';
 			break;
@@ -386,49 +401,23 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
 }
 
 bool checkJoystick() {
-    // static int i =0;
-    // FD_SET(fd_js,&set);
-    // select(fd_js + 1, &set,NULL,NULL,&timeout);
-    // if(FD_ISSET(fd_js,&set)) {
-    //     if (read(fd_js,&js,sizeof(struct js_event)) ==
-    //             sizeof(struct js_event))  {
-    //         switch(js.type & ~JS_EVENT_INIT) {
-    //         case JS_EVENT_BUTTON:
-    //             button[js.number] = js.value;
-    //             //printf("but %d: %d\n",js.number,js.value);
-    //             //if(button[js.number] == 1) process_joystick(js.number);
-    //             break;
-    //         case JS_EVENT_AXIS:
-    //             axis[js.number] = js.value;
-    //             //printf("axis %d: %d\n",js.number,js.value);
-    //             break;
-    //         }
-    //         i = 0;
+    while (read(fd_js,&js,sizeof(struct js_event)) == sizeof(struct js_event))  {
+		switch(js.type & ~JS_EVENT_INIT) {
+			case JS_EVENT_BUTTON:
+				button[js.number] = js.value;
+				//fprintf(stderr,"but %d: %d\n",js.number,js.value);
+				if(button[js.number] == 1) process_joystick(js.number);
+				break;
+			case JS_EVENT_AXIS:
+				axis[js.number] = js.value;
+				//printf("axis %d: %d\n",js.number,js.value);
+				break;
+			}
+	}
 
-    //         //if (errno != EAGAIN) {
-    //         //	perror("\njs: error reading (EAGAIN)");
-    //         //	exit (1);
-    //         //}
-    //     }
-    //     i++;
-    // }
-    // if(i>2) {
-    //     //fprintf(stderr,"\n Joystick Disconnected\n");
-    //     return false;
-    // }
-        while (read(fd_js,&js,sizeof(struct js_event)) ==
-                sizeof(struct js_event))  {
-            switch(js.type & ~JS_EVENT_INIT) {
-            case JS_EVENT_BUTTON:
-                //printf("but %d: %d\n",js.number,js.value);
-                if(js.value == 1) process_joystick(js.number);
-                break;
-            case JS_EVENT_AXIS:
-                axis[js.number] = js.value;
-                //printf("axis %d: %d\n",js.number,js.value);
-                break;
-            }
-}
+	if(errno != EAGAIN)
+		return false;
+	return true;
 }
 
 void printTelemetry(uint8_t *msg) {
@@ -573,7 +562,7 @@ int main(int argc, char **argv)
 	long long diff;
 	bool exit = false;
 	bool js_conn = true;
-	// bool prev_js_conn = true;
+	bool prev_js_conn = true;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
@@ -588,27 +577,8 @@ int main(int argc, char **argv)
 	term_puts("Type ^C to exit\n");
 	initProtocol();
 
-	term_puts("\nConnecting joystick...\n");
-
-
-	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
-	if ((fd_js = open(JS_DEV, O_RDONLY)) < 0) {
-		term_puts("\nFailed to connect joystick\n");
-		//exit(1);
-	}
 	gettimeofday(&tm1, NULL);
-	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 
-
-
-	/* discard any incoming text
-	 */
-	//while ((c = rs232_getchar_nb()) != -1)
-		//fputc(c,stderr);
-
-	/* send & receive
-	 */
-	 int counter = 0;
 	for (;;)
 	{
 		if ((c = term_getchar_nb()) != -1){
@@ -621,9 +591,16 @@ int main(int argc, char **argv)
 		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			checkJoystick();
-			//axis[3] = 32768;
-			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16383);
+			js_conn = checkJoystick();
+			if(js_conn && prev_js_conn)
+				sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
+			else if(!js_conn && prev_js_conn){
+				//send panic mode message
+				process_key(49);
+				//fprintf(stderr,"JS Connection Broke!\n");
+				prev_js_conn = false;
+			}
+
 		}
 
 		if ((c = rs232_getchar_nb()) != -1) {

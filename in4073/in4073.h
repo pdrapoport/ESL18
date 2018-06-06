@@ -48,9 +48,11 @@ int16_t axis[4];
 int16_t sp_avg, sq_avg, sr_avg;
 int16_t sax_avg, say_avg, saz_avg;
 int16_t phi_avg, theta_avg, psi_avg;
+bool DMP;
+
 bool calibration_done; // Update after the calibration is done
 bool motors_off; // Update according to the readings
-int b, d, p, p1, p2;
+unsigned int p, p1, p2;
 bool no_failure;
 void run_filters_and_control();
 void initValues();
@@ -58,13 +60,13 @@ void initValues();
 
 
 //Filters
-double x_1[3], y_1[3], x_2[3], y_2[3], x_3[3], y_3[3];
-double p_sensor[2], p_bias[2], q_sensor[2], q_bias[2];
-int bb[3];
-int a[3];
-int x0, x1, x2, yy1, yy2, yy0;
-int p2phi;
-int C1,C2;
+float x_1[3], y_1[3], x_2[3], y_2[3], x_3[3], y_3[3];
+float p_sensor[2], p_bias[2], q_sensor[2], q_bias[2];
+// int bb[3];
+// int a[3];
+int x0, x1, x2, yy1, yy2;
+//unsigned int p2phi;
+//unsigned int C1,C2;
 int p_kalman, phi_kalman, phi_error;
 int q_kalman, theta_kalman, theta_error;
 void initialize_butterworth();

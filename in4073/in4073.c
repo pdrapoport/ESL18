@@ -20,11 +20,11 @@
 enum states state;
 
 void initValues(){
-	b = 1;
-	d = 10;
+	//b = 1;
+	//d = 10;
 	p = 10;
-	p1 = 10;
-	p2 = 10;
+	p1 = 50;
+	p2 = 100;
 
 	demo_done = false;
 	state = Safe_Mode;
@@ -37,6 +37,7 @@ void initValues(){
 	motors_off = true;
 	calibration_done = false;
 	no_failure = true;
+    DMP = true;
 }
 
 /*------------------------------------------------------------------
@@ -259,26 +260,31 @@ void process_key(uint8_t c){
 		if (ae[3] < 0) ae[3] = 0;
 		break;
 	case 'm':
-		d++;
+		//d++;
 		break;
 	case ',':
-		d--;
-		if(d < 1) d = 1;
+		//d--;
+		//if(d < 1) d = 1;
 		break;
 	case '.':
-		b++;
+		//b++;
 		break;
 	case '/':
-		b--;
-		if(b < 1) b = 1;
+		//b--;
+		//if(b < 1) b = 1;
 		break;
 
 	//lift, roll, pitch, yaw control
 	case 'a':
 		//lift up
+        DMP = true;
+        imu_init(DMP, 100);
 		break;
 	case 'z':
 		//lift down
+        DMP = false;
+        imu_init(DMP, 500);
+
 		break;
 	case 'q':
 		//yaw down
@@ -540,16 +546,19 @@ int main(void)
 	initialize_butterworth();
 	//initialize_integrator();
 	initialize_kalman();
+    uint32_t tm2, tm1, diff;
 
-	uint32_t tm2, tm1, diff;
-	uint32_t counter = 0;
 
-	tm1 = get_time_us();
+    state = Raw_Mode;
+    DMP = false;
+
+	//uint32_t counter = 0;
+
 
 	while (!demo_done)
 	{
-		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
-        processPkt();
+        //if (rx_queue.count) process_key( dequeue(&rx_queue) );
+    //    processPkt();
 
 		/*if (rx_queue.count) {
 		        checkMotors();
@@ -557,54 +566,44 @@ int main(void)
 		if (check_timer_flag())
 		{
 
-			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
-
-			adc_request_sample();
-			if (bat_volt < 500) {
-				state = Panic_Mode;
-			}
-			//printf("adc req\n");
-			read_baro();
-			//printf("read baro\n");
-
-			//printf("test %d\n",i++);
-			processRecMsg();
+            //
+			// if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
+            //
+			// adc_request_sample();
+			// if (bat_volt < 500) {
+			// 	state = Panic_Mode;
+			// }
+			// //printf("adc req\n");
+			// read_baro();
+			// //printf("read baro\n");
+            //
+			// //printf("test %d\n",i++);
+			// processRecMsg();
 			//printf("processrecmsg\n");
 
-
+            // printf("%10ld | %2d | ", get_time_us(), state);
+            // printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+            // printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
+            // printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+            // printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+            // printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
 			clear_timer_flag();
 			//printf("cleartimerflag\n");
-
 
 		}
 
 		if (check_sensor_int_flag())
 		{
-            tm2 = get_time_us();
-            diff = (tm2 - tm1);
-            printf("%ld \n", diff);
-            tm1 = tm2;
+            tm1 = get_time_us();
 
-			//get_dmp_data();
-			get_raw_sensor_data();
 
-			// printf("%10ld | %2d | ", get_time_us(), state);
-			// printf("%5d | %3d %3d %3d %3d | \n",axis[3],ae[0],ae[1],ae[2],ae[3]);
-			// printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			// printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-			// printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			// printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
-			// clear_timer_flag();
-            //printf("cleartimerflag\n");
 
-			// printf("%ld ", get_time_us());
-			// printf("%d %d %d ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			// printf("%d %d %d ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-            //
-            //
-            // printf("%d %d %d %d %d \n", say_filtered, phi_kalman, sax_filtered, theta_kalman, sr_filtered);
+            if (DMP)
+			    get_dmp_data();
+            else
+			    get_raw_sensor_data();
 
-            //Run Filters
+            // Run Filters
             if (state == Raw_Mode){
                 filter = say_butterworth;
                 f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
@@ -621,6 +620,13 @@ int main(void)
             }
 
 			run_filters_and_control(&state);
+            tm2 = get_time_us();
+            diff = (tm2 - tm1);
+            printf("%d %d ", sp-sp_avg, sq-sq_avg);
+            printf("%d %d ", f_d.phi_kalman, f_d.theta_kalman);
+            printf("%d %d ", sr-sr_avg, f_d.sr_filtered);
+            printf("%d %d %d %d ", sax-sax_avg, say-say_avg, f_d.sax_filtered, f_d.say_filtered);
+            printf("%ld %ld\n", diff, get_time_us());
 		}
 
 

@@ -11,8 +11,27 @@
  */
 
 #include "in4073.h"
-#include "math.h"
+//#include "math.h"
 
+// From http://www.pertinentdetail.org/sqrt
+typedef unsigned uint32;
+
+#define iter1(N) \
+    try = root + (1 << (N)); \
+    if (n >= try << (N))   \
+    {   n -= try << (N);   \
+        root |= 2 << (N); \
+    }
+
+uint32_t sqrt_2(uint32_t n)
+{
+    uint32_t root = 0, try;
+    iter1 (15);    iter1 (14);    iter1 (13);    iter1 (12);
+    iter1 (11);    iter1 (10);    iter1 ( 9);    iter1 ( 8);
+    iter1 ( 7);    iter1 ( 6);    iter1 ( 5);    iter1 ( 4);
+    iter1 ( 3);    iter1 ( 2);    iter1 ( 1);    iter1 ( 0);
+    return root >> 1;
+}
 
 //Variables for calibration
 int16_t sp_array[64], sq_array[64], sr_array[64];
@@ -98,9 +117,9 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Full_Mode:
-			pitch = p1 * (axis[1]*30 - (theta-theta_avg)) - p2*(sq-sq_avg);
-			roll = p1 * (axis[0]*30 - (phi-phi_avg)) - p2*(sp-sp_avg);
-			yaw = p * (axis[2]*30 - (sr-sr_avg));
+			pitch = p1 * (axis[1]/10 - (theta-theta_avg)) + p2*(sq-sq_avg);
+			roll = p1 * (axis[0]/10 - (phi-phi_avg)) - p2*(sp-sp_avg);
+			yaw = p * (axis[2]/100 - (sr-sr_avg));
 			lift = axis[3]*30;
 			break;
 
@@ -120,9 +139,9 @@ void run_filters_and_control(enum states *state){
             // f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
 
             //Control with filtered Data
-            pitch = p1 * (axis[1]*30 - f_d.theta_kalman) - p2*(sq-sq_avg);
-            roll = p1 * (axis[0]*30 - f_d.phi_kalman) - p2*(sp-sp_avg);
-            yaw = p * (axis[2]*30 - f_d.sr_filtered);
+            pitch = p1 * (axis[1]/10 - f_d.theta_kalman) + p2*(sq-sq_avg);
+            roll = p1 * (axis[0]/10 - f_d.phi_kalman) - p2*(sp-sp_avg);
+            yaw = p * (axis[2]/100 - f_d.sr_filtered);
             lift = axis[3]*30;
 			break;
 
@@ -150,10 +169,10 @@ void run_filters_and_control(enum states *state){
 	}
 
 	if (*state != Panic_Mode){
-		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
-		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
-		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
-		ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
+		ae[0] = sqrt_2((20*pitch + 10*lift - yaw)/(40));  // A
+		ae[1] = sqrt_2((yaw + 10*lift - 20*roll)/(40));  // B
+		ae[2] = sqrt_2((-20*pitch + 10*lift - yaw)/(40)); // C
+		ae[3] = sqrt_2((yaw + 10*lift + 20*roll)/(40));  // D
 
 		for (int i = 0; i < 4; i++){
 			//ae[i] = ae[i]*6; //Scaling Factor
@@ -165,7 +184,7 @@ void run_filters_and_control(enum states *state){
 				ae[i] = 0;
 		}
 
-		//printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);
+		//printf("ae_0 = %6ld | ae_2 = %6ld | ae_2 = %6ld | ae_3 = %6ld\n", sqrt_2(100), sqrt_2(222), sqrt_2(450), sqrt_2(10000));
 	}
 	update_motors();
 }

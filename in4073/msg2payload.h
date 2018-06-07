@@ -11,7 +11,11 @@
 #define ESCBYTE         0x7D
 #define lowByte(MSG)    ((uint8_t)((MSG) & 0xFF))
 #define highByte(MSG)   ((uint8_t)((MSG) >> 8))
-#define combineByte(MSB,LSB) ((uint16_t) (((MSB) << 8) | (LSB)))
+#define secondByte(MSG)  ((uint8_t)(((MSG) >> 8) & 0xFF))
+#define thirdByte(MSG)  ((uint8_t)(((MSG) >> 16) & 0xFF))
+#define fourthByte(MSG)  ((uint8_t)(((MSG) >> 24) & 0xFF))
+#define combineByte(MSB,LSB) ((int16_t) (((MSB) << 8) | (LSB)))
+#define combine32Byte(MSB1, MSB2, MSB3, LSB) ((int32_t) ((MSB1 << 24) | (MSB2 << 16) | (MSB3 << 8) | LSB))
 
 //ID + CMD
 #define PWMODE 0x11    //PC2Drone Write Mode

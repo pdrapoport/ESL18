@@ -20,8 +20,8 @@
 enum states state;
 
 void initValues(){
-	//b = 1;
-	//d = 10;
+	b = 1;
+	d = 10;
 	p = 10;
 	p1 = 50;
 	p2 = 100;
@@ -38,7 +38,10 @@ void initValues(){
 	calibration_done = false;
 	no_failure = true;
 	last_rec_pkt = get_time_us();
-
+    flash_full = false;
+    read_completed = false;
+    start_logging = false;
+    //diff = 0;
 	for (int i = 0; i<4; i++)
 		axis_offset[i] = 0;
 }
@@ -94,24 +97,42 @@ void step(enum states *state, int c) {
 			break;
 
 		case '4':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
+			if (!checkMotor() && !checkJS() && no_failure && calibration_done && DMP) {
 				*state = Yaw_Mode;
 				printf("Yaw_Mode Selected\n");
 			}
+            else if (!DMP){
+                DMP = true;
+                imu_init(DMP, 100);
+                calibration_done = false;
+                *state = Safe_Mode;
+            }
 			break;
 
 		case '5':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
+			if (!checkMotor() && !checkJS() && no_failure && calibration_done && DMP) {
 				*state = Full_Mode;
 				printf("Full_Mode Selected\n");
 			}
+            else if (!DMP){
+                DMP = true;
+                imu_init(DMP, 100);
+                calibration_done = false;
+                *state = Safe_Mode;
+            }
 			break;
 
 		case '6':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
+			if (!checkMotor() && !checkJS() && no_failure && calibration_done && !DMP) {
 				*state = Raw_Mode;
 				printf("Raw_Mode Selected\n");
 			}
+            else if (DMP){
+                DMP = false;
+                imu_init(DMP, 500);
+                calibration_done = false;
+                *state = Safe_Mode;
+            }
 			break;
 
 		case '7':
@@ -399,7 +420,11 @@ void process_key(uint8_t c){
 		step(&state,'0');
 		break;
 	case 'p':
-		printf("%s\n",getCurrentState(state));
+		//printf("%s\n",getCurrentState(state));
+        if (!flash_full){
+            printf("STARTING LOGGING\n");
+            start_logging = true;
+        }
 		break;
 	default:
 		nrf_gpio_pin_toggle(RED);
@@ -562,194 +587,112 @@ void checkMotors() {
  * main -- everything you need is here :)
  ****------------------------------------------------------------------
  */
-void write_packet_flash(){
-	uint8_t packet[36];
-	    uint32_t timestamp = get_time_us();
-	    int16_t tmp;
-		bool write_flash = false;
-		uint32_t add = 0x000000;
-
-	    packet[0] = highByte(timestamp);
-	    packet[1] = lowByte(timestamp);
-	    packet[2] = state;
-	    packet[3] = calibration_done;
-	    for(int i = 0; i < 4; ++i) {
-	        packet[6 + 2 * i] = lowByte(ae[i]);
-	        packet[6 + 2 * i + 1] = highByte(ae[i]);
-	    }
-	    tmp = phi - phi_avg;
-	    packet[12] = highByte(tmp);
-	    packet[13] = lowByte(tmp);
-	    tmp = theta - theta_avg;
-	    packet[14] = highByte(tmp);
-	    packet[15] = lowByte(tmp);
-	    tmp = psi - psi_avg;
-	    packet[16] = highByte(tmp);
-	    packet[17] = lowByte(tmp);
-	    tmp = sp - sp_avg;
-	    packet[18] = highByte(tmp);
-	    packet[19] = lowByte(tmp);
-	    tmp = sq - sq_avg;
-	    packet[20] = highByte(tmp);
-		packet[21] = lowByte(tmp);
-		tmp = sr - sr_avg;
-		packet[22] = highByte(tmp);
-		packet[23] = lowByte(tmp);
-		tmp = sax - sax_avg;
-		packet[24] = highByte(tmp);
-		packet[25] = lowByte(tmp);
-		tmp = say - say_avg;
-		packet[26] = highByte(tmp);
-		packet[27] = lowByte(tmp);
-		tmp = saz - saz_avg;
-		packet[28] = highByte(tmp);
-		packet[29] = lowByte(tmp);
-		packet[30] = highByte(bat_volt);
-		packet[31] = lowByte(bat_volt);
-		packet[32] = highByte(temperature);
-		packet[33] = lowByte(temperature);
-		packet[34] = highByte(pressure);
-		packet[35] = lowByte(pressure);
-
-		printf("\nWriting into memory = ");
-		write_flash = flash_write_bytes(add, &packet[0],36);
-		printf("%d\n",write_flash);
-}
-
-void read_packet_flash(int * packet){
-	uint32_t add = 0x000000;
-	uint8_t buff[36];
-	for (int i = 0; i<18;i++)
-		packet[i] = 0;
-	int j = 0;
-	bool read_flash = false;
-	int temp;
-
-	read_flash = flash_read_bytes(add,&buff[0],36);
-	printf("Reading from memory =  %d\n",read_flash);
-	for (int i = 0; i<36; i+= 2){
-		temp = combineByte(buff[i],buff[i+1]);
-		packet[j] = temp;
-		j++;
-	}
-}
 
 int main(void)
 {
-	bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();
 	adc_init();
 	twi_init();
-	imu_init(false, 200);
+	imu_init(true, 100);
 	baro_init();
 	spi_flash_init();
 	ble_init();
 	initProtocol();
 	initValues();
 	//dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
-	int packet[36];
+	uint8_t packet[42];
+    bool connection_lost = false;
 	long connection_start_time = get_time_us() + 2350000;
-	uint32_t tm2, tm1, diff;
+	//uint32_t tm2, tm1;
 	uint32_t counter = 0;
-    //DMP = false;
-	state = Raw_Mode;
-
-	nrf_delay_ms(500);
-	write_packet_flash();
-	nrf_delay_ms(500);
-	read_packet_flash(packet);
-	tm1 = get_time_us();
+    DMP = true;
+	//tm1 = get_time_us();
 	while (!demo_done)
 	{
-		// // connection_lost = false;
-		// // //if (rx_queue.count) process_key( dequeue(&rx_queue) );
-		//
-		tm2 = get_time_us();
-		diff = (tm2 - tm1);
-		if (diff > 10000){
-			for (int i = 0;i<18;i++)
-			   printf("%d ",packet[i]);
-		   printf("\n");
-		tm1 = tm2;
-		// 	tm3 = get_time_us();
-		// 	processPkt();
-		// 	tm4 = get_time_us();
-		// 	if (tm4-tm3 > 500)
-		// 		printf("%ld %ld\n", tm4-tm3, get_time_us());
-		// 	tm1 = tm2;
-		}
-		//
-		// //
-		// // /*if (rx_queue.count) {
-		// //         checkMotors();
-		//    }*/
-		 if (check_timer_flag()) //40 ms
-		 {
+        connection_lost = false;
+        //if (rx_queue.count) process_key( dequeue(&rx_queue) );
+        processPkt();
 
-			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
-			// adc_request_sample();
-			// if (bat_volt < 500) {
-			//      //state = Panic_Mode;
-			// }
-			//printf("adc req\n");
-			//read_baro();
-			//printf("read baro\n");
+        if (check_timer_flag()) //50 ms
+        {
+            if (counter++%10 == 0) nrf_gpio_pin_toggle(BLUE);  //Blink blue LED every 0.5 secs
 
-			//printf("test %d\n",i++);
-			//processRecMsg();
-		// 	//printf("processrecmsg\n");
+    		adc_request_sample();
+    		if (bat_volt < 500) {
+    		    //state = Panic_Mode;
+    		}
+    		read_baro();
+    		processRecMsg();
 
-		if((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
-			state = Panic_Mode;
-			nrf_gpio_pin_toggle(YELLOW);
-			connection_lost = true;
-		}
-		// //
-		// // 	// printf("%10ld | %2d | ", get_time_us(), state);
-		// // 	// printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
-		// // 	// printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-		// // 	// printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-		// // 	// printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-		// // 	// printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
-		// // 	// clear_timer_flag();
+    		if((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
+    			//state = Panic_Mode;
+    			nrf_gpio_pin_toggle(YELLOW);
+    			connection_lost = true;
+    		}
+
+            // Prinf data in terminal every 100ms
+            //This will be replaced by telemetry
+            if (counter%2 == 0) {
+                printf("%10ld | %2d | ", get_time_us(), state);
+                printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+                if (DMP){
+                    printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
+                    printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+                    printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+
+                }
+                else{
+                    printf("%6d %6d %6d | ", f_d.phi_kalman, f_d.theta_kalman, psi-psi_avg);
+                    printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, f_d.sr_filtered);
+                    printf("%6d %6d %6d | ", f_d.sax_filtered, f_d.say_filtered, saz-saz_avg);
+                }
+                printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
+            }
+            clear_timer_flag();
 
 		}
 
 		if (check_sensor_int_flag())
 		{
+            //tm1 = get_time_us();
+			// Run Filters
+			if (!DMP){
+                get_raw_sensor_data();
 
-			// if (DMP)
-			// 	get_dmp_data();
-			// else
-			// 	get_raw_sensor_data();
-			//
-			// // Run Filters
-			// if (state == Raw_Mode) {
-			// 	filter = say_butterworth;
-			// 	f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
-			// 	filter = kalman_phi;
-			// 	f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,&filter);
-			//
-			// 	filter = sax_butterworth;
-			// 	f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
-			// 	filter = kalman_theta;
-			// 	f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
-			//
-			// 	filter = sr_butterworth;
-			// 	f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
-			// }
-			//
-			// run_filters_and_control(&state);
+				filter = say_butterworth;
+				f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
+				filter = kalman_phi;
+				f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,&filter);
 
-			// printf("%d %d ", sp-sp_avg, sq-sq_avg);
-			// printf("%d %d ", f_d.phi_kalman, f_d.theta_kalman);
-			// printf("%d %d ", sr-sr_avg, f_d.sr_filtered);
-			// printf("%d %d %d %d ", sax-sax_avg, say-say_avg, f_d.sax_filtered, f_d.say_filtered);
+				filter = sax_butterworth;
+				f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
+				filter = kalman_theta;
+				f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
+
+				filter = sr_butterworth;
+				f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
+			}
+            else
+                get_dmp_data();
+
+			run_filters_and_control(&state);
+            //tm2 = get_time_us();
+            //diff = tm2-tm1;
+
+            if (!flash_full && start_logging)
+                write_packet_flash();
 		}
 	}
+
+    while(!read_completed){
+        read_packet_flash(packet);
+        print_to_terminal(packet);
+        nrf_delay_ms(10);
+    }
+
 	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);
 

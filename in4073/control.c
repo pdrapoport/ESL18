@@ -13,7 +13,6 @@
 #include "in4073.h"
 #include "math.h"
 
-
 //Variables for calibration
 int16_t sp_array[64], sq_array[64], sr_array[64];
 int16_t sax_array[64], say_array[64], saz_array[64];
@@ -96,9 +95,9 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Full_Mode:
-			pitch = p2 * (p1 * (axis[1]*30 - (theta-theta_avg)) - (sq-sq_avg));
-			roll = p2 * (p1 * (axis[0]*30 - (phi-phi_avg)) - (sp-sp_avg));
-			yaw = p * (axis[2]*30 - (sr-sr_avg));
+			pitch = p1 * (axis[1]/10 - (theta-theta_avg)) + p2*(sq-sq_avg);
+			roll = p1 * (axis[0]/10 - (phi-phi_avg)) - p2*(sp-sp_avg);
+			yaw = p * (axis[2]/100 - (sr-sr_avg));
 			lift = axis[3]*30;
 			break;
 
@@ -117,7 +116,7 @@ void run_filters_and_control(enum states *state){
 		case Panic_Mode:
 			; //to avoid the static int below case
 			static int k = 0;
-			if(k++ % 10 == 0){
+			if(k++ % 2 == 0){
 				for (int j = 0; j<4; j++){
 					ae[j] -= 1;
 					if (ae[j] <= 0)
@@ -129,7 +128,7 @@ void run_filters_and_control(enum states *state){
 			break;
 	}
 
-	if (*state != Panic_Mode){ 
+	if (*state != Panic_Mode){
 		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
 		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
 		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
@@ -137,10 +136,10 @@ void run_filters_and_control(enum states *state){
 
 		for (int i = 0; i < 4; i++){
 			//ae[i] = ae[i]*6; //Scaling Factor
-			if (ae[i] >= 500)
-				ae[i] = 500;
-			else if (lift > 5910 && ae[i] <= 152)
-				ae[i] = 152;
+			if (ae[i] >= 800)
+				ae[i] = 800;
+			else if (lift > 5910 && ae[i] <= 200)
+				ae[i] = 200;
 			else if (ae[i]<0)
 				ae[i] = 0;
 		}

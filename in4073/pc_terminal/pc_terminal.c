@@ -177,7 +177,7 @@ int	rs232_getchar_nb()
 	else
 	{
 		assert(result == 1);
-		return (int) c;
+		return (int16_t) c;
 	}
 }
 
@@ -528,11 +528,6 @@ void processPkt() {
 		 ++readIndex;
 	   }
 	   else {
-		   fprintf(stderr, "\n");
-		   for (int i = 0; i < msglen; ++i) {
-			   fprintf(stderr, "%02X ", recChar[i]);
-		   }
-		   fprintf(stderr, "\n");
 		 packState = CRC_Check;
 	   }
 	   //fprintf(stderr, "\nRECV\n");
@@ -551,8 +546,6 @@ void processPkt() {
 	   }
 	   else {
 		 fprintf(stderr, "CRC FAIL!\n");
-  		 receivedMsg[++recBuff] = getPayload(msglen);
-  		 processRecMsg();
 		 slideMsg(1);
 		 packState = wait;
 	   }
@@ -575,7 +568,7 @@ void processPkt() {
 
 int main(int argc, char **argv)
 {
-	char		c;
+	int16_t		c;
 	struct timeval	tm1, tm2;
 	long long diff;
 	bool exit = false;
@@ -634,7 +627,6 @@ int main(int argc, char **argv)
 		}
 
 		if ((c = rs232_getchar_nb()) != -1) {
-			fprintf(stderr, "%02X ", (uint8_t)c);
 			recChar[buffCount] = (uint8_t)c;
 			++buffCount;
 			processPkt();

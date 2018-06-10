@@ -109,7 +109,6 @@ void rs232_open(void)
   	struct termios	tty;
 
        	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
-				printf("%d\n",fd_RS232);
 	assert(fd_RS232>=0);
 
   	result = isatty(fd_RS232);
@@ -421,15 +420,15 @@ bool checkJoystick() {
                 sizeof(struct js_event))  {
             switch(js.type & ~JS_EVENT_INIT) {
             case JS_EVENT_BUTTON:
-                button[js.number] = js.value;
                 //printf("but %d: %d\n",js.number,js.value);
-                if(button[js.number] == 1) process_joystick(js.number);
+                if(js.value == 1) process_joystick(js.number);
                 break;
             case JS_EVENT_AXIS:
                 axis[js.number] = js.value;
                 //printf("axis %d: %d\n",js.number,js.value);
                 break;
             }
+}
 }
 
 void printTelemetry(uint8_t *msg) {
@@ -529,6 +528,11 @@ void processPkt() {
 		 ++readIndex;
 	   }
 	   else {
+		   fprintf(stderr, "\n");
+		   for (int i = 0; i < msglen; ++i) {
+			   fprintf(stderr, "%02X ", recChar[i]);
+		   }
+		   fprintf(stderr, "\n");
 		 packState = CRC_Check;
 	   }
 	   //fprintf(stderr, "\nRECV\n");
@@ -540,13 +544,15 @@ void processPkt() {
 	 //   }
 	 //   fprintf(stderr, "\n");
 	   if (checkCRC(recChar, msglen)) {
-		 receivedMsg[++recBuff] = getPayload(msglen);
-		 processRecMsg();
+	   receivedMsg[++recBuff] = getPayload(msglen);
+	   processRecMsg();
 		 slideMsg(msglen);
 		 packState = wait;
 	   }
 	   else {
 		 fprintf(stderr, "CRC FAIL!\n");
+  		 receivedMsg[++recBuff] = getPayload(msglen);
+  		 processRecMsg();
 		 slideMsg(1);
 		 packState = wait;
 	   }
@@ -598,8 +604,7 @@ int main(int argc, char **argv)
 		//exit(1);
 	}
 	gettimeofday(&tm1, NULL);
-	fcntl(js_fd, F_SETFL, O_NONBLOCK);
-	gettimeofday(&start, NULL);
+	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 
 
 
@@ -610,19 +615,17 @@ int main(int argc, char **argv)
 
 	/* send & receive
 	 */
-
+	 int counter = 0;
 	for (;;)
 	{
 		if ((c = term_getchar_nb()) != -1){
-			fprintf(stderr, "char: %c\n",c);
 			process_key(c);
 			if (c == 'e')
 				exit = true;
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
-		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff >= 20 && absdiff >= 3000) {
+		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			//checkJoystick();
@@ -631,22 +634,10 @@ int main(int argc, char **argv)
 		}
 
 		if ((c = rs232_getchar_nb()) != -1) {
+			fprintf(stderr, "%02X ", (uint8_t)c);
 			recChar[buffCount] = (uint8_t)c;
 			++buffCount;
 			processPkt();
-			js_conn = checkJoystick();
-			//if(js_conn && prev_js_conn)
-			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
-			// else if(!js_conn && prev_js_conn){
-			// 	//send panic mode message
-			// 	process_key(49);
-			// 	prev_js_conn = false;
-			// }
-			//printf()			// for (int i = 0; i < 4; ++i) {
-			// 	axis[i]++;
-			// }
-			//if ((c = term_getchar_nb()) != -1)
-			//	rs232_putchar(c);
 		}
 		if (exit)
 			break;

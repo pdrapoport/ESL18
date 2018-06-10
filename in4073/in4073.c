@@ -82,54 +82,46 @@ void step(enum states *state, int c) {
                 case '2':
                     if (!checkMotor() && !checkJS() && no_failure){
                         *state = Manual_Mode;
-                        printf("Manual_Mode Selected\n");
                     }
                     break;
 
                 case '3':
                     if (!checkMotor() && !checkJS() && no_failure){
                         *state = Calibration_Mode;
-                        printf("Calibration_Mode Selected\n");
                     }
                     break;
 
                 case '4':
                     if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Yaw_Mode;
-                        printf("Yaw_Mode Selected\n");
                     }
                     break;
 
                 case '5':
                     if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Full_Mode;
-                        printf("Full_Mode Selected\n");
                     }
                     break;
 
                 case '6':
                     if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Raw_Mode;
-                        printf("Raw_Mode Selected\n");
                     }
                     break;
 
                 case '7':
                     if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Height_Mode;
-                        printf("Height_Mode Selected\n");
                     }
                     break;
 
                 case '8':
                     if (!checkMotor() && !checkJS() && no_failure && calibration_done){
                         *state = Wireless_Mode;
-                        printf("Wireless_Mode Selected\n");
                     }
                     break;
 
                 default:
-                    printf("No mode selected\n");
                     break;
             }
             break;
@@ -138,14 +130,11 @@ void step(enum states *state, int c) {
         case Manual_Mode:
             if (!no_failure){
                 *state = Panic_Mode;
-                printf("Panic_Mode Selected\n");
             }
             else if (c == '0' && !checkMotor() && !checkJS()){
                 *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
             }
             else{
-                printf("No mode selected\n");
             }
             break;
 
@@ -153,14 +142,11 @@ void step(enum states *state, int c) {
         case Yaw_Mode:
             if (!no_failure){
                 *state = Panic_Mode;
-                printf("Panic_Mode Selected\n");
             }
             else if (c == '0' && !checkMotor()){
                 *state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
             }
             else{
-                printf("No mode selected\n");
             }
             break;
 
@@ -171,11 +157,9 @@ void step(enum states *state, int c) {
           // Call for Panic_Mode function required
         else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
         }
         else{
-          printf("No mode selected\n");
         }
         break;
 
@@ -186,11 +170,9 @@ void step(enum states *state, int c) {
           // Call for Panic_Mode function required
         else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
         }
         else{
-          printf("No mode selected\n");
         }
         break;
 
@@ -201,11 +183,9 @@ void step(enum states *state, int c) {
           // Call for Panic_Mode function required
         else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
         }
         else{
-          printf("No mode selected\n");
         }
         break;
 
@@ -216,11 +196,9 @@ void step(enum states *state, int c) {
           // Call for Panic_Mode function required
         else if (c == '0' && !checkMotor()){
           *state = Safe_Mode;
-          printf("Safe_Mode Selected\n");
           // Call for Safe_Mode function required
         }
         else{
-          printf("No mode selected\n");
         }
         break;
 
@@ -398,9 +376,6 @@ void process_key(uint8_t c){
     case '0':
       step(&state,'0');
       break;
-    case 'p':
-      printf("%s\n",getCurrentState(state));
-      break;
     default:
       nrf_gpio_pin_toggle(RED);
       break;
@@ -562,35 +537,37 @@ void sendTelemetryPacket() {
         packet[6 + 2 * i] = lowByte(ae[i]);
         packet[6 + 2 * i + 1] = highByte(ae[i]);
     }
-    tmp = phi - phi_avg;
+    tmp = phi_avg;
     packet[14] = highByte(tmp);
     packet[15] = lowByte(tmp);
-    tmp = theta - theta_avg;
+    tmp = theta_avg;
     packet[16] = highByte(tmp);
     packet[17] = lowByte(tmp);
-    tmp = psi - psi_avg;
+    tmp = psi_avg;
     packet[18] = highByte(tmp);
     packet[19] = lowByte(tmp);
-    tmp = sp - sp_avg;
+    tmp = sp_avg;
     packet[20] = highByte(tmp);
     packet[21] = lowByte(tmp);
-    tmp = sq - sq_avg;
+    tmp = sq_avg;
     packet[22] = highByte(tmp);
     packet[23] = lowByte(tmp);
-    tmp = sr - sr_avg;
+    tmp = sr_avg;
     packet[24] = highByte(tmp);
     packet[25] = lowByte(tmp);
-    tmp = sax - sax_avg;
+    tmp = sax_avg;
     packet[26] = highByte(tmp);
     packet[27] = lowByte(tmp);
-    tmp = say - say_avg;
+    tmp = say_avg;
     packet[28] = highByte(tmp);
     packet[29] = lowByte(tmp);
-    tmp = saz - saz_avg;
+    tmp = saz_avg;
     packet[30] = highByte(tmp);
     packet[31] = lowByte(tmp);
+    NVIC_DisableIRQ(ADC_IRQn);
     packet[32] = highByte(bat_volt);
     packet[33] = lowByte(bat_volt);
+    NVIC_EnableIRQ(ADC_IRQn);
     packet[34] = fourthByte(temperature);
     packet[35] = thirdByte(temperature);
     packet[36] = secondByte(temperature);
@@ -614,7 +591,7 @@ void sendTelemetryPacket() {
 
 int main(void)
 {
-    bool connection_lost = false;
+    //bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -628,7 +605,7 @@ int main(void)
     initValues();
     //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
-  long connection_start_time = get_time_us() + 2350000;
+  //long connection_start_time = get_time_us() + 2350000;
 
     //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
@@ -637,7 +614,7 @@ int main(void)
     //tm1 = get_time_us();
 	while (!demo_done)
 	{
-      connection_lost = false;
+      //connection_lost = false;
   		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
   		processPkt();
 

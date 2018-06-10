@@ -68,11 +68,9 @@ void run_filters_and_control(enum states *state){
 				phi_avg = phi_sum / i;
 				theta_avg = theta_sum / i;
 				psi_avg = psi_sum / i;
-				printf("Calibration performed\n");
 				calibration_done = true;
 				if (motors_off && calibration_done){
 				  *state = Safe_Mode;
-				  printf("Safe_Mode Selected\n");
 				  i = 0;
 				  sp_sum = 0;
 				  sq_sum = 0;

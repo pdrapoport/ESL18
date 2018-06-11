@@ -9,6 +9,8 @@
  * makePayload():
  * - Create a payload with command and message input
  *
+ * receivePkt():
+ * - Retrieve packet from the rx buffer
  */
 #define DRONE
 #include "msg2payload.h"
@@ -39,6 +41,9 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
      */
     payload[index++] = idCmd;
 
+    //msgNum TO BE IMPLEMENTED, just set it to 0x00 for now
+    payload[index++] = 0x00;
+
     // ACTUAL MESSAGE
     // Copy input message
 
@@ -49,11 +54,22 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
 
     //compute crc
     uint16_t crc;
+    //uint8_t *payload_p = payload;
     crc = crc16_compute(payload + 1, index - 1, NULL); //compute crc without the start/stop byte
     payload[index++] = highByte(crc);
     payload[index++] = lowByte(crc);
     return payload;
 }
+
+#ifdef DRONE
+void receivePkt(){
+    //read data here
+    if (rx_queue.count) {
+        recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
+        // printf("???%02X ", recChar[buffCount - 1]);
+    }
+}
+#endif
 
 
 uint8_t cmd2len(uint8_t idCmd){
@@ -107,7 +123,17 @@ void drone2pc(uint8_t *msg){
  * The characters marked ? are irrelevant because they are situated after the first '\0' and thus will never be processed. They will also be overwritten by the next characters being added to recChar
  */
 void slideMsg(uint8_t i) {
-    for (uint8_t count = i; count < MAXMSG; count++) {
+    uint16_t count = 0;
+    //uint8_t tmp[MAXMSG];
+
+    // Disable interrupts
+
+    // for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
+    //     tmp[count-i] = recChar[count];
+    // }
+    // // Store the remaining characters back into recChar
+    // memcpy(recChar, tmp, MAXMSG + 1); //may cause buffer overflow according to dudes in stackoverflow
+    for (count = i; count < MAXMSG; count++) {
         recChar[count - i] = recChar[count];
     }
 
@@ -120,9 +146,17 @@ void slideMsg(uint8_t i) {
 }
 
 void slideRecMsg(uint8_t i) {
-    for(uint8_t count = i; count<MAXMSG; ++count) {
-        receivedMsg[count - i] = receivedMsg[count];
+    uint16_t count = 0;
+    message_t tmp[MAXMSG];
+
+    // Disable interrupts
+
+    for(count = i; count<MAXMSG; count++) { // Discard the i-1 first characters of recChar
+        tmp[count-i] = receivedMsg[count];
     }
+    // Store the remaining characters back into recChar
+    memcpy(recChar, tmp, MAXMSG); //may cause buffer overflow according to dudes in stackoverflow
+
     recBuff = recBuff - i;
     // Enable interrupts back
 
@@ -139,8 +173,8 @@ message_t getPayload(uint8_t msglen) {
 
     tmpMsg.idCmd = recChar[1];
 
-    for (i = 2; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
-        tmpMsg.msg[i-2] = recChar[i];
+    for (i = 3; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
+        tmpMsg.msg[i-3] = recChar[i];
     }
 
     return tmpMsg;

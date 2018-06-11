@@ -453,18 +453,40 @@ void printTelemetry(uint8_t *msg) {
 void processRecMsg(){
 	if(recBuff != 0){
 		uint8_t idCmd = receivedMsg[1].idCmd;
-		uint8_t msglen = cmd2len(idCmd);
+		int msglen = cmd2len(idCmd);
 		uint8_t msg[MAXMSG];
 		int j = 0;
 		for(j= 0;j< msglen-ADDBYTES;j++){
+			//printf("%04x ",receivedMsg[i].msg[j]),
 			msg[j] = receivedMsg[1].msg[j];
 		}
 
 		switch(idCmd){
+			case PWMODE:
+                //printf("PWMODE\n");
+                //changeMode(msg);
+				break;
+			case PWMOV:
+				//printf("PWMOV\n");
+				//changeMov(msg);
+				break;
+			case DWLOG:
+
+				break;
+			case DWMODE:
+
+				break;
+			case PRMODE:
+
+				break;
+			case PWKB:
+				//changeKbParam(msg);
+				break;
 			case DWTEL:
 				printTelemetry(msg);
 				break;
 			default:
+				printf("ERROR\n");
 				break;
 		}
 		slideRecMsg(1);
@@ -478,10 +500,13 @@ void processRecMsg(){
  * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
  */
 void processPkt() {
- while ((buffCount >= MINBUFFCOUNT) && (readIndex < buffCount)) {
+ while (readIndex < buffCount) {
    switch (packState) {
 	 case wait:
+	   //fprintf(stderr, "\nWAIT!\n");
+	   //printf("READ %02X\n", recChar[readIndex]);
 	   if (recChar[readIndex] == STARTBYTE) {
+		 //fprintf(stderr, "START\n");
 		 ++readIndex;
 		 packState = first_byte_received;
 	   }
@@ -496,6 +521,7 @@ void processPkt() {
 		 slideMsg(1);
 		 packState = wait;
 	   }
+	   //fprintf(stderr, "\nFIRST!\n");
 	   break;
 	 case receiveMsg:
 	   if (readIndex < msglen - 1) {
@@ -504,8 +530,14 @@ void processPkt() {
 	   else {
 		 packState = CRC_Check;
 	   }
+	   //fprintf(stderr, "\nRECV\n");
 	   break;
 	   case CRC_Check:
+	 //   fprintf(stderr, "\nRECEIVED MESSAGE: ");
+	 //   for(int i = 0; i < msglen; ++i) {
+		//    fprintf(stderr, "%02X ", recChar[i]);
+	 //   }
+	 //   fprintf(stderr, "\n");
 	   if (checkCRC(recChar, msglen)) {
 	   receivedMsg[++recBuff] = getPayload(msglen);
 	   processRecMsg();
@@ -517,10 +549,14 @@ void processPkt() {
 		 slideMsg(1);
 		 packState = wait;
 	   }
+	   //printf("\nCRC!\n");
+	   break;
+	 case panic:
+	   //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+	   //panic_on = true;
 	   break;
 	 default:
-	   packState = wait;
-	   slideMsg(buffCount);
+	   packState = panic;
    }
  }
 }
@@ -564,6 +600,14 @@ int main(int argc, char **argv)
 	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 
 
+
+	/* discard any incoming text
+	 */
+	//while ((c = rs232_getchar_nb()) != -1)
+		//fputc(c,stderr);
+
+	/* send & receive
+	 */
 	 int counter = 0;
 	for (;;)
 	{

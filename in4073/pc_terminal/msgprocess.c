@@ -44,6 +44,9 @@ uint8_t *makePayload(uint8_t idCmd, uint8_t *msg){
      */
     payload[index++] = idCmd;
 
+    //msgNum TO BE IMPLEMENTED, just set it to 0x00 for now
+    payload[index++] = 0x00;
+
     // ACTUAL MESSAGE
     // Copy input message
 
@@ -161,8 +164,8 @@ message_t getPayload(uint8_t msglen) {
 
     tmpMsg.idCmd = recChar[1];
 
-    for (i = 2; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
-        tmpMsg.msg[i-2] = recChar[i];
+    for (i = 3; i<msgend; i++) { // Skip the first 2 bytes (start byte and packet header) and reads until the start of the CRC
+        tmpMsg.msg[i-3] = recChar[i];
     }
 
     return tmpMsg;

@@ -37,7 +37,7 @@
 
 #define MAXMSG          50
 
-#define MAXPLDSIZE 10 // Maximum payload size (50 is actually too big, but it gies room for future protocol extensions)
+#define MAXPLDSIZE 10 // Maximum payload size 
 
 #define MINBUFFCOUNT 5 //Minimum buffCount to start processing message
 

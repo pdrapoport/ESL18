@@ -19,28 +19,28 @@
 
 enum states state;
 
-void initValues(){
-  b = 1;
-  d = 10;
-  p = 10;
-  p1 = 50;
-  p2 = 100;
+void initValues() {
+    b = 1;
+    d = 10;
+    p = 10;
+    p1 = 50;
+    p2 = 100;
 
-  demo_done = false;
-  state = Safe_Mode;
-  sp_avg = 0;
-  sq_avg = 0;
-  sr_avg = 0;
-  sax_avg = 0;
-  say_avg = 0;
-  saz_avg = 0;
-  motors_off = true;
-  calibration_done = false;
-  no_failure = true;
-  last_rec_pkt = get_time_us();
+    demo_done = false;
+    state = Safe_Mode;
+    sp_avg = 0;
+    sq_avg = 0;
+    sr_avg = 0;
+    sax_avg = 0;
+    say_avg = 0;
+    saz_avg = 0;
+    motors_off = true;
+    calibration_done = false;
+    no_failure = true;
+    last_rec_pkt = get_time_us();
 
-  for (int i = 0;i<4;i++)
-    axis_offset[i] = 0;
+    for (int i = 0; i < 4; i++)
+        axis_offset[i] = 0;
 }
 
 /*------------------------------------------------------------------
@@ -48,11 +48,11 @@ void initValues(){
  *------------------------------------------------------------------
  */
 
-bool checkJS(){
+bool checkJS() {
     return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
 }
 
-bool checkMotor(){
+bool checkMotor() {
     return (ae[0] || ae[1] || ae[2] || ae[3]);
 }
 
@@ -61,45 +61,45 @@ void step(enum states *state, int c) {
         // SAFE MODE
         case Safe_Mode:
             no_failure = true;
-            switch (c){
+            switch (c) {
                 case '2':
-                    if (!checkMotor() && !checkJS() && no_failure){
+                    if (!checkMotor() && !checkJS() && no_failure) {
                         *state = Manual_Mode;
                     }
                     break;
 
                 case '3':
-                    if (!checkMotor() && !checkJS() && no_failure){
+                    if (!checkMotor() && !checkJS() && no_failure) {
                         *state = Calibration_Mode;
                     }
                     break;
 
                 case '4':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
                         *state = Yaw_Mode;
                     }
                     break;
 
                 case '5':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
                         *state = Full_Mode;
                     }
                     break;
 
                 case '6':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
                         *state = Raw_Mode;
                     }
                     break;
 
                 case '7':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
                         *state = Height_Mode;
                     }
                     break;
 
                 case '8':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
                         *state = Wireless_Mode;
                     }
                     break;
@@ -111,98 +111,84 @@ void step(enum states *state, int c) {
 
         // MANUAL MODE
         case Manual_Mode:
-            if (!no_failure){
+            if (!no_failure) {
                 *state = Panic_Mode;
-            }
-            else if (c == '0' && !checkMotor() && !checkJS()){
+            } else if (c == '0' && !checkMotor() && !checkJS()) {
                 *state = Safe_Mode;
-            }
-            else{
             }
             break;
 
         // YAW MODE
         case Yaw_Mode:
-            if (!no_failure){
+            if (!no_failure) {
                 *state = Panic_Mode;
-            }
-            else if (c == '0' && !checkMotor()){
+            } else if (c == '0' && !checkMotor()) {
                 *state = Safe_Mode;
-            }
-            else{
             }
             break;
 
-      // FULL MODE
-      case Full_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && !checkMotor()){
-          *state = Safe_Mode;
-          // Call for Safe_Mode function required
-        }
-        else{
-        }
-        break;
+        // FULL MODE
+        case Full_Mode:
+            if (!no_failure)
+                *state = Panic_Mode;
+            // Call for Panic_Mode function required
+            else if (c == '0' && !checkMotor()) {
+                *state = Safe_Mode;
+                // Call for Safe_Mode function required
+            }
+            break;
 
-      // RAW MODE
-      case Raw_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && !checkMotor()){
-          *state = Safe_Mode;
-          // Call for Safe_Mode function required
-        }
-        else{
-        }
-        break;
+        // RAW MODE
+        case Raw_Mode:
+            if (!no_failure)
+                *state = Panic_Mode;
+            // Call for Panic_Mode function required
+            else if (c == '0' && !checkMotor()) {
+                *state = Safe_Mode;
+                // Call for Safe_Mode function required
+            }
+            break;
 
-      // HEIGHT MODE
-      case Height_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && !checkMotor()){
-          *state = Safe_Mode;
-          // Call for Safe_Mode function required
-        }
-        else{
-        }
-        break;
+        // HEIGHT MODE
+        case Height_Mode:
+            if (!no_failure)
+                *state = Panic_Mode;
+            // Call for Panic_Mode function required
+            else if (c == '0' && !checkMotor()) {
+                *state = Safe_Mode;
+                // Call for Safe_Mode function required
+            }
+            break;
 
-      // WIRELESS MODE
-      case Wireless_Mode:
-        if (!no_failure)
-          *state = Panic_Mode;
-          // Call for Panic_Mode function required
-        else if (c == '0' && !checkMotor()){
-          *state = Safe_Mode;
-          // Call for Safe_Mode function required
-        }
-        else{
-        }
-        break;
+        // WIRELESS MODE
+        case Wireless_Mode:
+            if (!no_failure)
+                *state = Panic_Mode;
+            // Call for Panic_Mode function required
+            else if (c == '0' && !checkMotor()) {
+                *state = Safe_Mode;
+                // Call for Safe_Mode function required
+            }
+            break;
 
-	case Panic_Mode:
-        nrf_gpio_pin_toggle(RED);
-        if (c == '0' && !checkMotor() && ((bat_volt > 1110) || (bat_volt < 650)))
-            *state = Safe_Mode;
-	    break;
+        case Panic_Mode:
+            nrf_gpio_pin_toggle(RED);
+            if (c == '0' && !checkMotor() && ((bat_volt > 1110) || (bat_volt < 650)))
+                *state = Safe_Mode;
+            break;
 
-	case Calibration_Mode:
-	  break;
+        case Calibration_Mode:
+            break;
     }
 }
 
-void apply_offset_js_axis(){
+void apply_offset_js_axis() {
     int32_t temp;
-    for(int i = 0;i<4;i++){
-        temp = axis[i]+axis_offset[i];
+    for (int i = 0; i < 4; i++) {
+        temp = axis[i] + axis_offset[i];
         if (temp < -32767)
             axis[i] = -32767;
-        else if (temp>32767)
+        else if (temp > 32767)
             axis[i] = 32767;
         else
             axis[i] = temp;
@@ -213,248 +199,243 @@ void apply_offset_js_axis(){
  * process_key -- process command keys
  *------------------------------------------------------------------
  */
-void process_key(uint8_t c){
-	switch (c)
-	{
-		//motor control
-		case 'd':
-			ae[0] += 10;
-			break;
-		case 'c':
-			ae[0] -= 10;
-			if (ae[0] < 0) ae[0] = 0;
-			break;
-		case 'f':
-			ae[1] += 10;
-			break;
-		case 'v':
-			ae[1] -= 10;
-			if (ae[1] < 0) ae[1] = 0;
-			break;
-		case 'g':
-			ae[2] += 10;
-			break;
-		case 'b':
-			ae[2] -= 10;
-			if (ae[2] < 0) ae[2] = 0;
-			break;
-		case 'h':
-			ae[3] += 10;
-			break;
-		case 'n':
-			ae[3] -= 10;
-			if (ae[3] < 0) ae[3] = 0;
-			break;
-    case 'm':
-      d++;
-      break;
-    case ',':
-      d--;
-      if(d < 1) d = 1;
-      break;
-    case '.':
-      b++;
-      break;
-    case '/':
-      b--;
-      if(b < 1) b = 1;
-      break;
+void process_key(uint8_t c) {
+    switch (c) {
+        //motor control
+        case 'd':
+            ae[0] += 10;
+            break;
+        case 'c':
+            ae[0] -= 10;
+            if (ae[0] < 0) ae[0] = 0;
+            break;
+        case 'f':
+            ae[1] += 10;
+            break;
+        case 'v':
+            ae[1] -= 10;
+            if (ae[1] < 0) ae[1] = 0;
+            break;
+        case 'g':
+            ae[2] += 10;
+            break;
+        case 'b':
+            ae[2] -= 10;
+            if (ae[2] < 0) ae[2] = 0;
+            break;
+        case 'h':
+            ae[3] += 10;
+            break;
+        case 'n':
+            ae[3] -= 10;
+            if (ae[3] < 0) ae[3] = 0;
+            break;
+        case 'm':
+            d++;
+            break;
+        case ',':
+            d--;
+            if (d < 1) d = 1;
+            break;
+        case '.':
+            b++;
+            break;
+        case '/':
+            b--;
+            if (b < 1) b = 1;
+            break;
 
-		//lift, roll, pitch, yaw control
-    case 'a':
-        //lift up
-        if (axis_offset[3]<31767)
-            axis_offset[3] += 1000;
-        break;
-    case 'z':
-        //lift down
-        if (axis_offset[3]>-31767)
-            axis_offset[3] -= 1000;
-        break;
-		case 'q':
-			//yaw down
-            if (axis_offset[2]> -31767)
+        //lift, roll, pitch, yaw control
+        case 'a':
+            //lift up
+            if (axis_offset[3] < 31767)
+                axis_offset[3] += 1000;
+            break;
+        case 'z':
+            //lift down
+            if (axis_offset[3] > -31767)
+                axis_offset[3] -= 1000;
+            break;
+        case 'q':
+            //yaw down
+            if (axis_offset[2] > -31767)
                 axis_offset[2] -= 1000;
-			break;
-		case 'w':
-			//yaw up
-            if (axis_offset[2]<31767)
+            break;
+        case 'w':
+            //yaw up
+            if (axis_offset[2] < 31767)
                 axis_offset[2] += 1000;
-			break;
-		case 'u':
-			//yaw control p up
-      p+=10;
-			break;
-		case 'j':
-			//yaw control p down
-      if (p > 10) p-=10;
-			break;
-		case 'i':
-			//roll, pitch control p1 up
-      p1+=1;
-			break;
-		case 'k':
-			//roll, pitch control p1 down
-      if(p1 > 0) p1-=1;
-			break;
-		case 'o':
-			//roll, pitch control p2 up
-      p2+=1;
-			break;
-		case 'l':
-			//roll, pitch control p2 down
-      if(p2 > 1) p2-=1;
-			break;
-		case 43:
-			//pitch down
-            if (axis_offset[1]<31767)
+            break;
+        case 'u':
+            //yaw control p up
+            p += 10;
+            break;
+        case 'j':
+            //yaw control p down
+            if (p > 10) p -= 10;
+            break;
+        case 'i':
+            //roll, pitch control p1 up
+            p1 += 1;
+            break;
+        case 'k':
+            //roll, pitch control p1 down
+            if (p1 > 0) p1 -= 1;
+            break;
+        case 'o':
+            //roll, pitch control p2 up
+            p2 += 1;
+            break;
+        case 'l':
+            //roll, pitch control p2 down
+            if (p2 > 1) p2 -= 1;
+            break;
+        case 43:
+            //pitch down
+            if (axis_offset[1] < 31767)
                 axis_offset[1] += 1000;
-			break;
-		case 95:
-			//pitch up
-            if (axis_offset[1]> -31767)
+            break;
+        case 95:
+            //pitch up
+            if (axis_offset[1] > -31767)
                 axis_offset[1] -= 1000;
-			break;
-		case 40:
-			//roll up
-            if (axis_offset[0]<31767)
+            break;
+        case 40:
+            //roll up
+            if (axis_offset[0] < 31767)
                 axis_offset[0] += 1000;
-			break;
-		case 41:
-			//roll down
-            if (axis_offset[0]> -31767)
+            break;
+        case 41:
+            //roll down
+            if (axis_offset[0] > -31767)
                 axis_offset[0] -= 1000;
-			break;
-		case 27:
-			demo_done = true;
-			break;
+            break;
+        case 27:
+            demo_done = true;
+            break;
 
-    //modes
-	case '1':
-	  nrf_gpio_pin_toggle(RED);
-      no_failure = false;
-      step(&state,'1');
-			break;
-    case '2':
-      step(&state,'2');
-      break;
-    case '3':
-      step(&state,'3');
-      break;
-    case '4':
-      step(&state,'4');
-      break;
-    case '5':
-      step(&state,'5');
-      break;
-    case '6':
-      step(&state,'6');
-      break;
-    case '7':
-      step(&state,'7');
-      break;
-    case '8':
-      step(&state,'8');
-      break;
-    case '0':
-      step(&state,'0');
-      break;
-    default:
-      nrf_gpio_pin_toggle(RED);
-      break;
-	}
-}
-
-
- // Author: Vincent Bejach
- /* Implement the FSM defined for the communication protocol.
-  * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
-  * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
-  */
- void processPkt() {
-  if (rx_queue.count) {
-      recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
-  }
-  while ((buffCount >= MINBUFFCOUNT) && (readIndex < buffCount)) {
-    switch (packState) {
-      case wait:
-        if (recChar[readIndex] == STARTBYTE) {
-          ++readIndex;
-          packState = first_byte_received;
-        }
-        else {
-          slideMsg(1);
-        }
-        break;
-      case first_byte_received:
-        msglen = cmd2len(recChar[readIndex++]);
-        packState = receiveMsg;
-        if (msglen == 0) {
-          slideMsg(1);
-          packState = wait;
-        }
-        break;
-      case receiveMsg:
-        if (readIndex < msglen - 1) {
-          ++readIndex;
-        }
-        else {
-          packState = CRC_Check;
-        }
-        break;
-      case CRC_Check:
-        if (checkCRC(recChar, msglen)) {
-          receivedMsg[++recBuff] = getPayload(msglen);
-          processRecMsg();
-          slideMsg(msglen);
-          packState = wait;
-        }
-        else {
-          slideMsg(1);
-          packState = wait;
-        }
-        break;
-      default:
-        packState = wait;
-        slideMsg(buffCount);
+        //modes
+        case '1':
+            nrf_gpio_pin_toggle(RED);
+            no_failure = false;
+            step(&state, '1');
+            break;
+        case '2':
+            step(&state, '2');
+            break;
+        case '3':
+            step(&state, '3');
+            break;
+        case '4':
+            step(&state, '4');
+            break;
+        case '5':
+            step(&state, '5');
+            break;
+        case '6':
+            step(&state, '6');
+            break;
+        case '7':
+            step(&state, '7');
+            break;
+        case '8':
+            step(&state, '8');
+            break;
+        case '0':
+            step(&state, '0');
+            break;
+        default:
+            nrf_gpio_pin_toggle(RED);
+            break;
     }
-  }
 }
 
-void processRecMsg(){
-	if(recBuff != 0){
-		uint8_t idCmd = receivedMsg[1].idCmd;
-		uint8_t msglen = cmd2len(idCmd);
-		uint8_t msg[MAXMSG];
-		int j = 0;
-		for(j= 0;j< msglen-ADDBYTES;j++){
-			msg[j] = receivedMsg[1].msg[j];
-		}
+// Author: Vincent Bejach
+/* Implement the FSM defined for the communication protocol.
+ * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
+ * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
+ */
+void processPkt() {
+    if (rx_queue.count) {
+        recChar[buffCount++] = (uint8_t) dequeue( & rx_queue);
+    }
+    while ((buffCount >= MINBUFFCOUNT) && (readIndex < buffCount)) {
+        switch (packState) {
+            case wait:
+                if (recChar[readIndex] == STARTBYTE) {
+                    ++readIndex;
+                    packState = first_byte_received;
+                } else {
+                    slideMsg(1);
+                }
+                break;
+            case first_byte_received:
+                msglen = cmd2len(recChar[readIndex++]);
+                packState = receiveMsg;
+                if (msglen == 0) {
+                    slideMsg(1);
+                    packState = wait;
+                }
+                break;
+            case receiveMsg:
+                if (readIndex < msglen - 1) {
+                    ++readIndex;
+                } else {
+                    packState = CRC_Check;
+                }
+                break;
+            case CRC_Check:
+                if (checkCRC(recChar, msglen)) {
+                    receivedMsg[++recBuff] = getPayload(msglen);
+                    processRecMsg();
+                    slideMsg(msglen);
+                    packState = wait;
+                } else {
+                    slideMsg(1);
+                    packState = wait;
+                }
+                break;
+            default:
+                packState = wait;
+                slideMsg(buffCount);
+        }
+    }
+}
 
-		switch(idCmd){
-			case PWMODE:
+void processRecMsg() {
+    if (recBuff != 0) {
+        uint8_t idCmd = receivedMsg[1].idCmd;
+        uint8_t msglen = cmd2len(idCmd);
+        uint8_t msg[MAXMSG];
+        int j = 0;
+        for (j = 0; j < msglen - ADDBYTES; j++) {
+            msg[j] = receivedMsg[1].msg[j];
+        }
+
+        switch (idCmd) {
+            case PWMODE:
                 process_key(msg[0]);
-				break;
-			case PWMOV:
-				changeMov(msg);
-				break;
-			case PWKB:
-				process_key(msg[0]);
-				break;
-			default:
-				break;
-		}
-    last_rec_pkt = get_time_us();
-		slideRecMsg(1);
-	}
+                break;
+            case PWMOV:
+                changeMov(msg);
+                break;
+            case PWKB:
+                process_key(msg[0]);
+                break;
+            default:
+                break;
+        }
+        last_rec_pkt = get_time_us();
+        slideRecMsg(1);
+    }
 
 }
 
-void changeMov(uint8_t *msg){
-	axis[0] = (int16_t)combineByte(msg[0], msg[1]);
-	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
-	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
-	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
+void changeMov(uint8_t *msg) {
+    axis[0] = (int16_t) combineByte(msg[0], msg[1]);
+    axis[1] = (int16_t) combineByte(msg[2], msg[3]);
+    axis[2] = (int16_t) combineByte(msg[4], msg[5]);
+    axis[3] = (int16_t) combineByte(msg[6], msg[7]);
     apply_offset_js_axis();
 }
 
@@ -504,72 +485,67 @@ void sendTelemetryPacket() {
     packet[40] = secondByte(pressure);
     packet[41] = lowByte(pressure);
     uint8_t *msg = makePayload(DWTEL, packet);
-    for(int i = 0; i < DWTELLEN; ++i) {
+    for (int i = 0; i < DWTELLEN; ++i) {
         uart_put(msg[i]);
     }
     free(msg);
 }
-
 
 /*------------------------------------------------------------------
  * main -- everything you need is here :)
  *------------------------------------------------------------------
  */
 
-int main(void)
-{
+int main(void) {
     //bool connection_lost = false;
-	uart_init();
-	gpio_init();
-	timers_init();
-	adc_init();
-	twi_init();
-	imu_init(true, 100);
-	baro_init();
-	spi_flash_init();
-	ble_init();
-	initProtocol();
+    uart_init();
+    gpio_init();
+    timers_init();
+    adc_init();
+    twi_init();
+    imu_init(true, 100);
+    baro_init();
+    spi_flash_init();
+    ble_init();
+    initProtocol();
     initValues();
     //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
-  //long connection_start_time = get_time_us() + 2350000;
+    //long connection_start_time = get_time_us() + 2350000;
 
-	uint32_t counter = 0;
-    uint32_t lts = get_time_us();
+    uint32_t counter = 0;
+    uint32_t lts = get_time_us() + 2350000; //add offset for board start-up
 
     //tm1 = get_time_us();
-	while (!demo_done)
-	{
-  		processPkt();
+    while (!demo_done) {
+        processPkt();
 
-  		if (check_timer_flag()) //40 ms
-  		{
+        if (check_timer_flag()) //40 ms
+        {
 
-  			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
+            if (counter++ % 20 == 0) nrf_gpio_pin_toggle(BLUE);
 
-  			adc_request_sample();
+            adc_request_sample();
             if (bat_volt < 1060) { // Safety check: battery voltage
                 //state = Panic_Mode;
             }
-  			read_baro();
-  			clear_timer_flag();
+            read_baro();
+            clear_timer_flag();
 
-  		}
+        }
 
         if ((get_time_us() - lts) > 100000) {
             sendTelemetryPacket();
             lts = get_time_us();
         }
 
-  		if (check_sensor_int_flag())
-  		{
-  			get_dmp_data();
-  			run_filters_and_control(&state);
-  		}
+        if (check_sensor_int_flag()) {
+            get_dmp_data();
+            run_filters_and_control( & state);
+        }
 
+    }
+    nrf_delay_ms(100);
 
-  	}
-	nrf_delay_ms(100);
-
-	NVIC_SystemReset();
+    NVIC_SystemReset();
 }

@@ -33,15 +33,15 @@
 bool demo_done;
 
 enum states {
-  Safe_Mode,            // Mode 0
-  Panic_Mode,           // Mode 1
-  Manual_Mode,          // Mode 2
-  Calibration_Mode,     // Mode 3
-  Yaw_Mode,             // Mode 4
-  Full_Mode,            // Mode 5
-  Raw_Mode,             // Mode 6
-  Height_Mode,          // Mode 7
-  Wireless_Mode         // Mode 8
+    Safe_Mode,            // Mode 0
+    Panic_Mode,           // Mode 1
+    Manual_Mode,          // Mode 2
+    Calibration_Mode,     // Mode 3
+    Yaw_Mode,             // Mode 4
+    Full_Mode,            // Mode 5
+    Raw_Mode,             // Mode 6
+    Height_Mode,          // Mode 7
+    Wireless_Mode         // Mode 8
 } state;
 
 int16_t axis_offset[4];
@@ -75,9 +75,9 @@ void gpio_init(void);
 // Queue
 #define QUEUE_SIZE 256
 typedef struct {
-	uint8_t Data[QUEUE_SIZE];
-	uint16_t first,last;
-  	uint16_t count;
+    uint8_t Data[QUEUE_SIZE];
+    uint16_t first,last;
+    uint16_t count;
 } queue;
 void init_queue(queue *q);
 void enqueue(queue *q, char x);

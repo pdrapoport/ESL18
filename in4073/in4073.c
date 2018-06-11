@@ -48,23 +48,6 @@ void initValues(){
  *------------------------------------------------------------------
  */
 
-const char* getCurrentState(enum states state)
-{
-   switch (state)
-   {
-      case Safe_Mode: return "Safe_Mode";
-      case Panic_Mode: return "Panic_Mode";
-      case Manual_Mode: return "Manual_Mode";
-      case Calibration_Mode: return "Calibration_Mode";
-      case Yaw_Mode: return "Yaw_Mode";
-      case Full_Mode: return "Full_Mode";
-      case Raw_Mode: return "Raw_Mode";
-      case Height_Mode: return "Height_Mode";
-      case Wireless_Mode: return "Wireless_Mode";
-      default: return "Error";
-   }
-}
-
 bool checkJS(){
     return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
 }
@@ -389,14 +372,13 @@ void process_key(uint8_t c){
   * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
   */
  void processPkt() {
-  receivePkt();
-  while (readIndex < buffCount) {
+  if (rx_queue.count) {
+      recChar[buffCount++] = (uint8_t)dequeue(&rx_queue);
+  }
+  while ((buffCount >= MINBUFFCOUNT) && (readIndex < buffCount)) {
     switch (packState) {
       case wait:
-        //printf("\nWAIT!\n");
-        //printf("READ %02X\n", recChar[readIndex]);
         if (recChar[readIndex] == STARTBYTE) {
-          //printf("START\n");
           ++readIndex;
           packState = first_byte_received;
         }
@@ -411,7 +393,6 @@ void process_key(uint8_t c){
           slideMsg(1);
           packState = wait;
         }
-        //printf("\nFIRST!\n");
         break;
       case receiveMsg:
         if (readIndex < msglen - 1) {
@@ -420,41 +401,22 @@ void process_key(uint8_t c){
         else {
           packState = CRC_Check;
         }
-        //printf("\nRECV\n");
         break;
       case CRC_Check:
         if (checkCRC(recChar, msglen)) {
           receivedMsg[++recBuff] = getPayload(msglen);
-          //printf("\nRECEIVED MESSAGE: ");
-          // for (int k = 0; k < msglen; ++k) {
-          //     printf("%02X ", recChar[k]);
-          // }
-          // printf("\n");
           processRecMsg();
-          // if (buffCount > 13) {
-          //     printf("oldStartByte: %02X\n", recChar[13]);
-          // }
-          // printf("%d/%d -> ", readIndex, buffCount);
           slideMsg(msglen);
-          // printf("%d/%d\n", readIndex, buffCount);
-          // if (buffCount > 0) {
-          //     printf("currentStartByte: %02X\n", recChar[0]);
-          // }
           packState = wait;
         }
         else {
-          //printf("\nCRC FAIL!\n");
           slideMsg(1);
           packState = wait;
         }
-        // printf("\nCRC!\n");
-        break;
-      case panic:
-        //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
-        //panic_on = true;
         break;
       default:
-        packState = panic;
+        packState = wait;
+        slideMsg(buffCount);
     }
   }
 }
@@ -462,37 +424,24 @@ void process_key(uint8_t c){
 void processRecMsg(){
 	if(recBuff != 0){
 		uint8_t idCmd = receivedMsg[1].idCmd;
-		int msglen = cmd2len(idCmd);
+		uint8_t msglen = cmd2len(idCmd);
 		uint8_t msg[MAXMSG];
 		int j = 0;
 		for(j= 0;j< msglen-ADDBYTES;j++){
-			//printf("%04x ",receivedMsg[i].msg[j]),
 			msg[j] = receivedMsg[1].msg[j];
 		}
 
 		switch(idCmd){
 			case PWMODE:
-                //printf("PWMODE\n");
-                changeMode(msg);
+                process_key(msg[0]);
 				break;
 			case PWMOV:
-				//printf("PWMOV\n");
 				changeMov(msg);
 				break;
-			case DWLOG:
-
-				break;
-			case DWMODE:
-
-				break;
-			case PRMODE:
-
-				break;
 			case PWKB:
-				changeKbParam(msg);
+				process_key(msg[0]);
 				break;
 			default:
-				printf("ERROR\n");
 				break;
 		}
     last_rec_pkt = get_time_us();
@@ -501,26 +450,12 @@ void processRecMsg(){
 
 }
 
-void changeMode(uint8_t *msg){
-   process_key((uint8_t)msg[0]);
-}
-
 void changeMov(uint8_t *msg){
-	// int j = 0;
-	// int msglen = cmd2len(PWMOV);
-	// for(j = 0; j < msglen-ADDBYTES; printf("%04x ",msg[j]),j++);
-	// printf("\n");
-	//int16_t mot1, mot2, mot3, mot4;
-
 	axis[0] = (int16_t)combineByte(msg[0], msg[1]);
 	axis[1] = (int16_t)combineByte(msg[2], msg[3]);
 	axis[2] = (int16_t)combineByte(msg[4], msg[5]);
 	axis[3] = (int16_t)combineByte(msg[6], msg[7]);
     apply_offset_js_axis();
-}
-
-void changeKbParam(uint8_t *msg){
-	process_key((uint8_t)msg[0]);
 }
 
 void sendTelemetryPacket() {
@@ -532,10 +467,14 @@ void sendTelemetryPacket() {
     packet[3] = lowByte(timestamp);
     packet[4] = state;
     packet[5] = calibration_done;
-    for(int i = 0; i < 4; ++i) {
-        packet[6 + 2 * i] = lowByte(ae[i]);
-        packet[6 + 2 * i + 1] = highByte(ae[i]);
-    }
+    packet[6] = lowByte(ae[0]);
+    packet[7] = highByte(ae[0]);
+    packet[8] = lowByte(ae[1]);
+    packet[9] = highByte(ae[1]);
+    packet[10] = lowByte(ae[2]);
+    packet[11] = highByte(ae[2]);
+    packet[12] = lowByte(ae[3]);
+    packet[13] = highByte(ae[3]);
     packet[14] = highByte(phi - phi_avg);
     packet[15] = lowByte(phi - phi_avg);
     packet[16] = highByte(theta - theta_avg);
@@ -565,7 +504,7 @@ void sendTelemetryPacket() {
     packet[40] = secondByte(pressure);
     packet[41] = lowByte(pressure);
     uint8_t *msg = makePayload(DWTEL, packet);
-    for(int i = 0; i < 48; ++i) {
+    for(int i = 0; i < DWTELLEN; ++i) {
         uart_put(msg[i]);
     }
     free(msg);
@@ -595,20 +534,14 @@ int main(void)
 
   //long connection_start_time = get_time_us() + 2350000;
 
-    //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
     uint32_t lts = get_time_us();
 
     //tm1 = get_time_us();
 	while (!demo_done)
 	{
-      //connection_lost = false;
-  		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
   		processPkt();
 
-  		/*if (rx_queue.count) {
-  			checkMotors();
-  		}*/
   		if (check_timer_flag()) //40 ms
   		{
 
@@ -618,18 +551,7 @@ int main(void)
             if (bat_volt < 1060) { // Safety check: battery voltage
                 //state = Panic_Mode;
             }
-  			//printf("adc req\n");
   			read_baro();
-  			//printf("read baro\n");
-
-  			//printf("test %d\n",i++);
-  			//printf("processrecmsg\n");
-			//printf("%10ld | %2d | ", get_time_us(), state);
-			//printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
-			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-			//printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-            //printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-			//printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
   			clear_timer_flag();
 
   		}
@@ -641,10 +563,6 @@ int main(void)
 
   		if (check_sensor_int_flag())
   		{
-            //tm2 = get_time_us();
-            //diff = (tm2 - tm1)/ 1000;
-            //printf("%4ld \n ", diff);
-            //tm1 = tm2;
   			get_dmp_data();
   			run_filters_and_control(&state);
   		}

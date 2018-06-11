@@ -6,8 +6,6 @@
 #include "crc16.h"
 
 #define STARTBYTE       0xAA
-#define STOPBYTE        0x55
-#define ESCBYTE         0x7D
 #define lowByte(MSG)    ((uint8_t)((MSG) & 0xFF))
 #define highByte(MSG)   ((uint8_t)((MSG) >> 8))
 #define secondByte(MSG)  ((uint8_t)(((MSG) >> 8) & 0xFF))
@@ -26,21 +24,21 @@
 #define PWKB   0x13    //PC2Drone Keyboard Input
 
 //Length per CMD (in bytes)
-#define PWMODELEN  6
-#define PWMOVLEN   13
-#define DWLOGLEN   39
-#define DWTELLEN   48
-#define DWMODELEN  6
-#define PRMODELEN  5
-#define PWKBLEN    6
+#define PWMODELEN  5
+#define PWMOVLEN   12
+#define DWLOGLEN   38
+#define DWTELLEN   47
+#define DWMODELEN  5
+#define PRMODELEN  4
+#define PWKBLEN    5
 
-#define ADDBYTES 5
+#define ADDBYTES 4
 
 #define MAXMSG          50
 
 #define MAXPLDSIZE 10 // Maximum payload size (50 is actually too big, but it gies room for future protocol extensions)
 
-#define MINBUFFCOUNT 6 //Minimum buffCount to start processing message
+#define MINBUFFCOUNT 47 //Minimum buffCount to start processing message
 
 typedef struct message{
     uint8_t idCmd;
@@ -60,7 +58,7 @@ uint8_t readIndex;
 
 uint8_t recBuff;
 
-int msglen;
+uint8_t msglen;
 
 bool messageComplete;
 bool receiveComplete;

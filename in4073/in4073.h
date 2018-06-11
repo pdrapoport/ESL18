@@ -21,6 +21,8 @@
 #include "app_util_platform.h"
 #include <math.h>
 #include "msg2payload.h"
+#include <string.h>
+#include <stdlib.h>
 
 #define RED		22
 #define YELLOW		24
@@ -142,5 +144,6 @@ void processRecMsg();
 void changeMode();
 void changeMov(uint8_t *msg);
 void changeKbParam(uint8_t *msg);
+void sendTelemetryPacket();
 
 #endif // IN4073_H__

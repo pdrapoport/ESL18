@@ -596,8 +596,8 @@ int main(void)
 	long connection_start_time = get_time_us() + 2350000;
 
     uint32_t counter = 0;
-    uint8_t bat_counter = 0;
-    uint16_t sum_bat_volt = 0;
+    // uint8_t bat_counter = 0;
+    // uint64_t sum_bat_volt = 0;
     uint32_t lts = get_time_us();
 
     //tm1 = get_time_us();
@@ -616,16 +616,16 @@ int main(void)
             adc_request_sample();
 
             //Battery check function
-            sum_bat_volt += bat_volt;
-            if(!(bat_counter++ % 10)){
-                sum_bat_volt /= 10;
-                if(sum_bat_volt < 1060){
+            // sum_bat_volt += bat_volt;
+            // if(!(bat_counter++ % 10)){
+            //     sum_bat_volt /= 10;
+                if(bat_volt < 1040){
                     state = Panic_Mode;
                 }
-                sum_bat_volt = 0;
-            }
+            //     sum_bat_volt = 0;
+            // }
 
-            processRecMsg();
+            //processRecMsg();
 
             if ((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
                 state = Panic_Mode;

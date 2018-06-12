@@ -538,8 +538,8 @@ int main(int argc, char **argv)
 	struct timeval	tm1, tm2;
 	long long diff;
 	bool exit = false;
-	bool js_conn = false;
-	bool prev_js_conn = false;
+	bool js_conn = true;
+	bool prev_js_conn = true;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;

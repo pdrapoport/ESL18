@@ -583,7 +583,7 @@ int main(int argc, char **argv)
 
 	term_initio();
 	rs232_open();
-	js_open();
+	//js_open();
 
 	term_puts("Type ^C to exit\n");
 	initProtocol();
@@ -621,9 +621,9 @@ int main(int argc, char **argv)
 		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			//checkJoystick();
+			checkJoystick();
 			//axis[3] = 32768;
-			//sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
+			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16383);
 		}
 
 		if ((c = rs232_getchar_nb()) != -1) {

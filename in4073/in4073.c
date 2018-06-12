@@ -76,23 +76,44 @@ void step(enum states *state, int c) {
                     }
                     break;
 
-                case '4':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
-                        *state = Yaw_Mode;
-                    }
-                    break;
+		case '4':
+			if (!checkMotor() && !checkJS() && no_failure && calibration_done && DMP) {
+				*state = Yaw_Mode;
+				printf("Yaw_Mode Selected\n");
+			}
+            else if (!DMP){
+                DMP = true;
+                imu_init(DMP, 100);
+                calibration_done = false;
+                *state = Safe_Mode;
+            }
+			break;
 
-                case '5':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
-                        *state = Full_Mode;
-                    }
-                    break;
+		case '5':
+			if (!checkMotor() && !checkJS() && no_failure && calibration_done && DMP) {
+				*state = Full_Mode;
+				printf("Full_Mode Selected\n");
+			}
+            else if (!DMP){
+                DMP = true;
+                imu_init(DMP, 100);
+                calibration_done = false;
+                *state = Safe_Mode;
+            }
+			break;
 
-                case '6':
-                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
-                        *state = Raw_Mode;
-                    }
-                    break;
+		case '6':
+			if (!checkMotor() && !checkJS() && no_failure && calibration_done && !DMP) {
+				*state = Raw_Mode;
+				printf("Raw_Mode Selected\n");
+			}
+            else if (DMP){
+                DMP = false;
+                imu_init(DMP, 500);
+                calibration_done = false;
+                *state = Safe_Mode;
+            }
+			break;
 
                 case '7':
                     if (!checkMotor() && !checkJS() && no_failure && calibration_done){
@@ -362,6 +383,11 @@ void process_key(uint8_t c){
 		step(&state,'0');
 		break;
 	case 'p':
+		//printf("%s\n",getCurrentState(state));
+        if (!flash_full){
+            printf("STARTING LOGGING\n");
+            start_logging = true;
+        }
 		break;
 	default:
 		nrf_gpio_pin_toggle(RED);
@@ -562,77 +588,6 @@ void sendTelemetryPacket() {
  * main -- everything you need is here :)
  ****------------------------------------------------------------------
  */
-void write_packet_flash(){
-	uint8_t packet[36];
-	    uint32_t timestamp = get_time_us();
-	    int16_t tmp;
-		bool write_flash = false;
-		uint32_t add = 0x000000;
-
-	    packet[0] = highByte(timestamp);
-	    packet[1] = lowByte(timestamp);
-	    packet[2] = state;
-	    packet[3] = calibration_done;
-	    for(int i = 0; i < 4; ++i) {
-	        packet[6 + 2 * i] = lowByte(ae[i]);
-	        packet[6 + 2 * i + 1] = highByte(ae[i]);
-	    }
-	    tmp = phi - phi_avg;
-	    packet[12] = highByte(tmp);
-	    packet[13] = lowByte(tmp);
-	    tmp = theta - theta_avg;
-	    packet[14] = highByte(tmp);
-	    packet[15] = lowByte(tmp);
-	    tmp = psi - psi_avg;
-	    packet[16] = highByte(tmp);
-	    packet[17] = lowByte(tmp);
-	    tmp = sp - sp_avg;
-	    packet[18] = highByte(tmp);
-	    packet[19] = lowByte(tmp);
-	    tmp = sq - sq_avg;
-	    packet[20] = highByte(tmp);
-		packet[21] = lowByte(tmp);
-		tmp = sr - sr_avg;
-		packet[22] = highByte(tmp);
-		packet[23] = lowByte(tmp);
-		tmp = sax - sax_avg;
-		packet[24] = highByte(tmp);
-		packet[25] = lowByte(tmp);
-		tmp = say - say_avg;
-		packet[26] = highByte(tmp);
-		packet[27] = lowByte(tmp);
-		tmp = saz - saz_avg;
-		packet[28] = highByte(tmp);
-		packet[29] = lowByte(tmp);
-		packet[30] = highByte(bat_volt);
-		packet[31] = lowByte(bat_volt);
-		packet[32] = highByte(temperature);
-		packet[33] = lowByte(temperature);
-		packet[34] = highByte(pressure);
-		packet[35] = lowByte(pressure);
-
-		printf("\nWriting into memory = ");
-		write_flash = flash_write_bytes(add, &packet[0],36);
-		printf("%d\n",write_flash);
-}
-
-void read_packet_flash(int * packet){
-	uint32_t add = 0x000000;
-	uint8_t buff[36];
-	for (int i = 0; i<18;i++)
-		packet[i] = 0;
-	int j = 0;
-	bool read_flash = false;
-	int temp;
-
-	read_flash = flash_read_bytes(add,&buff[0],36);
-	printf("Reading from memory =  %d\n",read_flash);
-	for (int i = 0; i<36; i+= 2){
-		temp = combineByte(buff[i],buff[i+1]);
-		packet[j] = temp;
-		j++;
-	}
-}
 
 int main(void)
 {
@@ -642,21 +597,19 @@ int main(void)
 	timers_init();
 	adc_init();
 	twi_init();
-	imu_init(false, 200);
+	imu_init(true, 100);
 	baro_init();
 	spi_flash_init();
 	ble_init();
 	initProtocol();
-    initValues();
-    //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
-    int packet[36];
-  //long connection_start_time = get_time_us() + 2350000;
-
-    //uint32_t tm2, tm1;
+	initValues();
+	//dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+	uint8_t packet[42];
+    bool connection_lost = false;
+	long connection_start_time = get_time_us() + 2350000;
+	//uint32_t tm2, tm1;
 	uint32_t counter = 0;
-    uint32_t lts = get_time_us();
-
-
+    DMP = true;
 	//tm1 = get_time_us();
 	while (!demo_done)
 	{

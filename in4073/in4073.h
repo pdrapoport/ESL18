@@ -60,6 +60,7 @@ unsigned int p, p1, p2,b,d;
 bool no_failure;
 void run_filters_and_control();
 void initValues();
+//uint32_t diff;
 
 
 
@@ -94,6 +95,14 @@ struct filtered_data {
 
 int butterworth_filter(int raw_data, enum filters *filter);
 int kalman_filter(int filtered, int vel_read, enum filters *filter);
+
+//Logging
+bool flash_full;
+bool read_completed;
+bool start_logging;
+void write_packet_flash(void);
+void read_packet_flash(uint8_t * packet);
+void print_to_terminal(uint8_t * packet);
 
 // Timers
 #define TIMER_PERIOD	50 //50ms=20Hz (MAX 23bit, 4.6h)

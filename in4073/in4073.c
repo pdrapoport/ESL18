@@ -20,11 +20,11 @@
 enum states state;
 
 void initValues(){
-	//b = 1;
-	//d = 10;
-	p = 10;
-	p1 = 50;
-	p2 = 100;
+  b = 1;
+  d = 10;
+  p = 1000;
+  p1 = 50;
+  p2 = 110;
 
 	demo_done = false;
 	state = Safe_Mode;
@@ -74,155 +74,133 @@ bool checkMotor(){
 }
 
 void step(enum states *state, int c) {
-	switch (*state) {
-	// SAFE MODE
-	case Safe_Mode:
-		no_failure = true;
-		switch (c) {
-		case '2':
-			if (!checkMotor() && !checkJS() && no_failure) {
-				*state = Manual_Mode;
-				printf("Manual_Mode Selected\n");
-			}
-			break;
+    switch (*state) {
+        // SAFE MODE
+        case Safe_Mode:
+            no_failure = true;
+            switch (c){
+                case '2':
+                    if (!checkMotor() && !checkJS() && no_failure){
+                        *state = Manual_Mode;
+                    }
+                    break;
 
-		case '3':
-			if (!checkMotor() && !checkJS() && no_failure) {
-				*state = Calibration_Mode;
-				printf("Calibration_Mode Selected\n");
-			}
-			break;
+                case '3':
+                    if (!checkMotor() && !checkJS() && no_failure){
+                        *state = Calibration_Mode;
+                    }
+                    break;
 
-		case '4':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
-				*state = Yaw_Mode;
-				printf("Yaw_Mode Selected\n");
-			}
-			break;
+                case '4':
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                        *state = Yaw_Mode;
+                    }
+                    break;
 
-		case '5':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
-				*state = Full_Mode;
-				printf("Full_Mode Selected\n");
-			}
-			break;
+                case '5':
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                        *state = Full_Mode;
+                    }
+                    break;
 
-		case '6':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
-				*state = Raw_Mode;
-				printf("Raw_Mode Selected\n");
-			}
-			break;
+                case '6':
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                        *state = Raw_Mode;
+                    }
+                    break;
 
-		case '7':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
-				*state = Height_Mode;
-				printf("Height_Mode Selected\n");
-			}
-			break;
+                case '7':
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                        *state = Height_Mode;
+                    }
+                    break;
 
-		case '8':
-			if (!checkMotor() && !checkJS() && no_failure && calibration_done) {
-				*state = Wireless_Mode;
-				printf("Wireless_Mode Selected\n");
-			}
-			break;
+                case '8':
+                    if (!checkMotor() && !checkJS() && no_failure && calibration_done){
+                        *state = Wireless_Mode;
+                    }
+                    break;
 
-		default:
-			printf("No mode selected\n");
-			break;
-		}
-		break;
+                default:
+                    break;
+            }
+            break;
 
-	// MANUAL MODE
-	case Manual_Mode:
-		if (!no_failure) {
-			*state = Panic_Mode;
-			printf("Panic_Mode Selected\n");
-		}
-		else if (c == '0' && !checkMotor() && !checkJS()) {
-			*state = Safe_Mode;
-			printf("Safe_Mode Selected\n");
-		}
-		else{
-			printf("No mode selected\n");
-		}
-		break;
+        // MANUAL MODE
+        case Manual_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+            }
+            else if (c == '0' && !checkMotor() && !checkJS()){
+                *state = Safe_Mode;
+            }
+            else{
+            }
+            break;
 
-	// YAW MODE
-	case Yaw_Mode:
-		if (!no_failure) {
-			*state = Panic_Mode;
-			printf("Panic_Mode Selected\n");
-		}
-		else if (c == '0' && !checkMotor()) {
-			*state = Safe_Mode;
-			printf("Safe_Mode Selected\n");
-		}
-		else{
-			printf("No mode selected\n");
-		}
-		break;
+        // YAW MODE
+        case Yaw_Mode:
+            if (!no_failure){
+                *state = Panic_Mode;
+            }
+            else if (c == '0' && !checkMotor()){
+                *state = Safe_Mode;
+            }
+            else{
+            }
+            break;
 
-	// FULL MODE
-	case Full_Mode:
-		if (!no_failure)
-			*state = Panic_Mode;
-		// Call for Panic_Mode function required
-		else if (c == '0' && !checkMotor()) {
-			*state = Safe_Mode;
-			printf("Safe_Mode Selected\n");
-			// Call for Safe_Mode function required
-		}
-		else{
-			printf("No mode selected\n");
-		}
-		break;
+      // FULL MODE
+      case Full_Mode:
+        if (!no_failure)
+          *state = Panic_Mode;
+          // Call for Panic_Mode function required
+        else if (c == '0' && !checkMotor()){
+          *state = Safe_Mode;
+          // Call for Safe_Mode function required
+        }
+        else{
+        }
+        break;
 
-	// RAW MODE
-	case Raw_Mode:
-		if (!no_failure)
-			*state = Panic_Mode;
-		// Call for Panic_Mode function required
-		else if (c == '0' && !checkMotor()) {
-			*state = Safe_Mode;
-			printf("Safe_Mode Selected\n");
-			// Call for Safe_Mode function required
-		}
-		else{
-			printf("No mode selected\n");
-		}
-		break;
+      // RAW MODE
+      case Raw_Mode:
+        if (!no_failure)
+          *state = Panic_Mode;
+          // Call for Panic_Mode function required
+        else if (c == '0' && !checkMotor()){
+          *state = Safe_Mode;
+          // Call for Safe_Mode function required
+        }
+        else{
+        }
+        break;
 
-	// HEIGHT MODE
-	case Height_Mode:
-		if (!no_failure)
-			*state = Panic_Mode;
-		// Call for Panic_Mode function required
-		else if (c == '0' && !checkMotor()) {
-			*state = Safe_Mode;
-			printf("Safe_Mode Selected\n");
-			// Call for Safe_Mode function required
-		}
-		else{
-			printf("No mode selected\n");
-		}
-		break;
+      // HEIGHT MODE
+      case Height_Mode:
+        if (!no_failure)
+          *state = Panic_Mode;
+          // Call for Panic_Mode function required
+        else if (c == '0' && !checkMotor()){
+          *state = Safe_Mode;
+          // Call for Safe_Mode function required
+        }
+        else{
+        }
+        break;
 
-	// WIRELESS MODE
-	case Wireless_Mode:
-		if (!no_failure)
-			*state = Panic_Mode;
-		// Call for Panic_Mode function required
-		else if (c == '0' && !checkMotor()) {
-			*state = Safe_Mode;
-			printf("Safe_Mode Selected\n");
-			// Call for Safe_Mode function required
-		}
-		else{
-			printf("No mode selected\n");
-		}
-		break;
+      // WIRELESS MODE
+      case Wireless_Mode:
+        if (!no_failure)
+          *state = Panic_Mode;
+          // Call for Panic_Mode function required
+        else if (c == '0' && !checkMotor()){
+          *state = Safe_Mode;
+          // Call for Safe_Mode function required
+        }
+        else{
+        }
+        break;
 
 	case Panic_Mode:
 		nrf_gpio_pin_toggle(RED);
@@ -478,9 +456,75 @@ void processPkt() {
 			//TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
 			//panic_on = true;
 			break;
-		default:
-			packState = panic;
-		}
+		case 'k':
+			//roll, pitch control p1 down
+      if(p1 > 0) p1-=1;
+			break;
+		case 'o':
+			//roll, pitch control p2 up
+      p2+=1;
+			break;
+		case 'l':
+			//roll, pitch control p2 down
+      if(p2 > 1) p2-=1;
+			break;
+		case 43:
+			//pitch down
+            if (axis_offset[1]<31767)
+                axis_offset[1] += 1000;
+			break;
+		case 95:
+			//pitch up
+            if (axis_offset[1]> -31767)
+                axis_offset[1] -= 1000;
+			break;
+		case 40:
+			//roll up
+            if (axis_offset[0]<31767)
+                axis_offset[0] += 1000;
+			break;
+		case 41:
+			//roll down
+            if (axis_offset[0]> -31767)
+                axis_offset[0] -= 1000;
+			break;
+		case 27:
+			demo_done = true;
+			break;
+
+    //modes
+	case '1':
+	  nrf_gpio_pin_toggle(RED);
+      no_failure = false;
+      step(&state,'1');
+			break;
+    case '2':
+      step(&state,'2');
+      break;
+    case '3':
+      step(&state,'3');
+      break;
+    case '4':
+      step(&state,'4');
+      break;
+    case '5':
+      step(&state,'5');
+      break;
+    case '6':
+      step(&state,'6');
+      break;
+    case '7':
+      step(&state,'7');
+      break;
+    case '8':
+      step(&state,'8');
+      break;
+    case '0':
+      step(&state,'0');
+      break;
+    default:
+      nrf_gpio_pin_toggle(RED);
+      break;
 	}
 }
 
@@ -548,14 +592,52 @@ void changeKbParam(uint8_t *msg){
 	process_key((uint8_t)msg[0]);
 }
 
-void checkMotors() {
-	uint8_t data[8];
-	for(int i = 0; i < 8; ++i) {
-		data[i] = dequeue(&rx_queue);
-	}
-	for(int i = 0; i < 4; ++i) {
-		ae[i] = data[2*i] | (data[2*i+1] << 8);
-	}
+void sendTelemetryPacket() {
+    uint8_t packet[42];
+    uint32_t timestamp = get_time_us();
+    packet[0] = fourthByte(timestamp);
+    packet[1] = thirdByte(timestamp);
+    packet[2] = secondByte(timestamp);
+    packet[3] = lowByte(timestamp);
+    packet[4] = state;
+    packet[5] = calibration_done;
+    for(int i = 0; i < 4; ++i) {
+        packet[6 + 2 * i] = highByte(ae[i]);
+        packet[6 + 2 * i + 1] = lowByte(ae[i]);
+    }
+    packet[14] = highByte(phi - phi_avg);
+    packet[15] = lowByte(phi - phi_avg);
+    packet[16] = highByte(theta - theta_avg);
+    packet[17] = lowByte(theta - theta_avg);
+    packet[18] = highByte(psi - psi_avg);
+    packet[19] = lowByte(psi - psi_avg);
+    packet[20] = highByte(sp - sp_avg);
+    packet[21] = lowByte(sp - sp_avg);
+    packet[22] = highByte(sq - sq_avg);
+    packet[23] = lowByte(sq - sq_avg);
+    packet[24] = highByte(sr - sr_avg);
+    packet[25] = lowByte(sr - sr_avg);
+    packet[26] = highByte(sax - sax_avg);
+    packet[27] = lowByte(sax - sax_avg);
+    packet[28] = highByte(say - say_avg);
+    packet[29] = lowByte(say - say_avg);
+    packet[30] = highByte(saz - saz_avg);
+    packet[31] = lowByte(saz - saz_avg);
+    packet[32] = highByte(bat_volt);
+    packet[33] = lowByte(bat_volt);
+    packet[34] = fourthByte(0);
+    packet[35] = thirdByte(0);
+    packet[36] = highByte(p1);
+    packet[37] = lowByte(p1);
+    packet[38] = fourthByte(0);
+    packet[39] = thirdByte(0);
+    packet[40] = highByte(p2);
+    packet[41] = lowByte(p2);
+    uint8_t *msg = makePayload(DWTEL, packet);
+    for(int i = 0; i < 48; ++i) {
+        uart_put(msg[i]);
+    }
+    free(msg);
 }
 
 /*------------------------------------------------------------------
@@ -636,7 +718,7 @@ void read_packet_flash(int * packet){
 
 int main(void)
 {
-	bool connection_lost = false;
+    //bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -647,14 +729,14 @@ int main(void)
 	spi_flash_init();
 	ble_init();
 	initProtocol();
-	initValues();
-	//dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
-	int packet[36];
-	long connection_start_time = get_time_us() + 2350000;
-	uint32_t tm2, tm1, diff;
+    initValues();
+    //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+
+  //long connection_start_time = get_time_us() + 2350000;
+
+    //uint32_t tm2, tm1, diff;
 	uint32_t counter = 0;
-    //DMP = false;
-	state = Raw_Mode;
+    uint32_t lts = get_time_us();
 
 	nrf_delay_ms(500);
 	write_packet_flash();
@@ -663,30 +745,9 @@ int main(void)
 	tm1 = get_time_us();
 	while (!demo_done)
 	{
-		// // connection_lost = false;
-		// // //if (rx_queue.count) process_key( dequeue(&rx_queue) );
-		//
-		tm2 = get_time_us();
-		diff = (tm2 - tm1);
-		if (diff > 10000){
-			for (int i = 0;i<18;i++)
-			   printf("%d ",packet[i]);
-		   printf("\n");
-		tm1 = tm2;
-		// 	tm3 = get_time_us();
-		// 	processPkt();
-		// 	tm4 = get_time_us();
-		// 	if (tm4-tm3 > 500)
-		// 		printf("%ld %ld\n", tm4-tm3, get_time_us());
-		// 	tm1 = tm2;
-		}
-		//
-		// //
-		// // /*if (rx_queue.count) {
-		// //         checkMotors();
-		//    }*/
-		 if (check_timer_flag()) //40 ms
-		 {
+      //connection_lost = false;
+  		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
+  		processPkt();
 
 			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
@@ -702,24 +763,15 @@ int main(void)
 			//processRecMsg();
 		// 	//printf("processrecmsg\n");
 
-		if((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
-			state = Panic_Mode;
-			nrf_gpio_pin_toggle(YELLOW);
-			connection_lost = true;
-		}
-		// //
-		// // 	// printf("%10ld | %2d | ", get_time_us(), state);
-		// // 	// printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
-		// // 	// printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
-		// // 	// printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
-		// // 	// printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
-		// // 	// printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
-		// // 	// clear_timer_flag();
-
-		}
-
-		if (check_sensor_int_flag())
-		{
+  			//printf("test %d\n",i++);
+  			//printf("processrecmsg\n");
+			//printf("%10ld | %2d | ", get_time_us(), state);
+			//printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
+			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
+			//printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
+            //printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
+			//printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
+  			clear_timer_flag();
 
 			// if (DMP)
 			// 	get_dmp_data();
@@ -744,13 +796,23 @@ int main(void)
 			//
 			// run_filters_and_control(&state);
 
-			// printf("%d %d ", sp-sp_avg, sq-sq_avg);
-			// printf("%d %d ", f_d.phi_kalman, f_d.theta_kalman);
-			// printf("%d %d ", sr-sr_avg, f_d.sr_filtered);
-			// printf("%d %d %d %d ", sax-sax_avg, say-say_avg, f_d.sax_filtered, f_d.say_filtered);
-		}
-	}
-	printf("\n\t Goodbye \n\n");
+        if ((get_time_us() - lts) > 100000) {
+            sendTelemetryPacket();
+            lts = get_time_us();
+        }
+
+  		if (check_sensor_int_flag())
+  		{
+            //tm2 = get_time_us();
+            //diff = (tm2 - tm1)/ 1000;
+            //printf("%4ld \n ", diff);
+            //tm1 = tm2;
+  			get_dmp_data();
+  			run_filters_and_control(&state);
+  		}
+
+
+  	}
 	nrf_delay_ms(100);
 
 	NVIC_SystemReset();

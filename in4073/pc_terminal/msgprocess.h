@@ -1,5 +1,5 @@
-#ifndef MSGPROCESS_H__
-#define MSGPROCESS_H__
+#ifndef MSG2PAYLOAD_H__
+#define MSG2PAYLOAD_H__
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -10,13 +10,18 @@
 #define ESCBYTE         0x7D
 #define lowByte(MSG)    ((uint8_t)((MSG) & 0xFF))
 #define highByte(MSG)   ((uint8_t)((MSG) >> 8))
-#define combineByte(MSB,LSB) ((uint16_t) (((MSB) << 8) | (LSB)))
+#define secondByte(MSG)  ((uint8_t)(((MSG) >> 8) & 0xFF))
+#define thirdByte(MSG)  ((uint8_t)(((MSG) >> 16) & 0xFF))
+#define fourthByte(MSG)  ((uint8_t)(((MSG) >> 24) & 0xFF))
+#define combineByte(MSB,LSB) ((int16_t) (((MSB) << 8) | (LSB)))
+#define combine32Byte(MSB1, MSB2, MSB3, LSB) ((int32_t) ((MSB1 << 24) | (MSB2 << 16) | (MSB3 << 8) | LSB))
 
 //ID + CMD
 #define PWMODE 0x11    //PC2Drone Write Mode
 #define PWMOV  0x12    //PC2Drone Write Movement
 #define DWLOG  0x28    //Drone2PC Write Logging
 #define DWMODE 0x29    //Drone2PC Write Mode
+#define DWTEL  0x27    //Drone2PC Telemetry Packet
 #define PRMODE 0x14    //PC2Drone Read Mode
 #define PWKB   0x13    //PC2Drone Keyboard Input
 
@@ -24,6 +29,7 @@
 #define PWMODELEN  6
 #define PWMOVLEN   13
 #define DWLOGLEN   39
+#define DWTELLEN   48
 #define DWMODELEN  6
 #define PRMODELEN  5
 #define PWKBLEN    6
@@ -42,10 +48,8 @@ typedef struct message{
 } message_t;
 
 enum packegeStates {
-    wait, first_byte_received, receiveMsg, processMsg, CRC_Check, transmit, panic
+    wait, first_byte_received, receiveMsg, CRC_Check, transmit, panic
 } packState;
-
-int msglen;
 
 typedef struct payload *payload_p;
 
@@ -54,11 +58,12 @@ uint8_t buffCount;
 uint8_t recChar[MAXMSG];
 uint8_t readIndex;
 
-
-
 uint8_t recBuff;
 
+int msglen;
+
 bool messageComplete;
+bool receiveComplete;
 message_t receivedMsg[MAXPLDSIZE];
 void initProtocol();
 uint8_t *makePayload(uint8_t idCmd, uint8_t *msg);
@@ -67,7 +72,6 @@ uint8_t cmd2len(uint8_t idCmd);
 void slideMsg(uint8_t i);
 void slideRecMsg(uint8_t i);
 message_t getPayload(uint8_t msglen);
-bool processPkt();
 bool checkCRC(uint8_t *msg, uint8_t length);
 
 #endif // MSG2PAYLOAD_H__

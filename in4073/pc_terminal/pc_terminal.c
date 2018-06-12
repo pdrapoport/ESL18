@@ -102,7 +102,6 @@ fd_set set;
 struct js_event js;
 
 int axis[6];
-int button[12];
 struct timeval timeout;
 
 void rs232_open(void)
@@ -111,8 +110,7 @@ void rs232_open(void)
 	int result;
 	struct termios tty;
 
-	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
-	printf("%d\n",fd_RS232);
+       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
 	assert(fd_RS232>=0);
 
 	result = isatty(fd_RS232);
@@ -181,7 +179,7 @@ int     rs232_getchar_nb()
 	else
 	{
 		assert(result == 1);
-		return (int) c;
+		return (int16_t) c;
 	}
 }
 
@@ -424,9 +422,8 @@ bool checkJoystick() {
                 sizeof(struct js_event))  {
             switch(js.type & ~JS_EVENT_INIT) {
             case JS_EVENT_BUTTON:
-                button[js.number] = js.value;
                 //printf("but %d: %d\n",js.number,js.value);
-                if(button[js.number] == 1) process_joystick(js.number);
+                if(js.value == 1) process_joystick(js.number);
                 break;
             case JS_EVENT_AXIS:
                 axis[js.number] = js.value;
@@ -434,7 +431,136 @@ bool checkJoystick() {
                 break;
             }
 }
+}
+
+void printTelemetry(uint8_t *msg) {
+	fprintf(stderr, "%10d | ", combine32Byte(msg[0], msg[1], msg[2], msg[3]));
+	fprintf(stderr, "%2d | %d |", msg[4], msg[5]);
+	for(int i = 0; i < 4; ++i) {
+		fprintf(stderr, " %3d ", combineByte(msg[6 + 2 * i], msg[6 + 2 * i + 1]));
+	}
+	fprintf(stderr, "|");
+	for(int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6d ", combineByte(msg[14 + 6 * i + 2 * j], msg[14 + 6 * i + 2 * j + 1]));
+		}
+		fprintf(stderr, "|");
+	}
+	fprintf(stderr, " %4d |", combineByte(msg[32], msg[33]));
+	fprintf(stderr, " %5d | %7d\n", combine32Byte(msg[34], msg[35], msg[36], msg[37]),
+									combine32Byte(msg[38], msg[39], msg[40], msg[41]));
     return true;
+}
+
+void processRecMsg(){
+	if(recBuff != 0){
+		uint8_t idCmd = receivedMsg[1].idCmd;
+		int msglen = cmd2len(idCmd);
+		uint8_t msg[MAXMSG];
+		int j = 0;
+		for(j= 0;j< msglen-ADDBYTES;j++){
+			//printf("%04x ",receivedMsg[i].msg[j]),
+			msg[j] = receivedMsg[1].msg[j];
+		}
+
+		switch(idCmd){
+			case PWMODE:
+                //printf("PWMODE\n");
+                //changeMode(msg);
+				break;
+			case PWMOV:
+				//printf("PWMOV\n");
+				//changeMov(msg);
+				break;
+			case DWLOG:
+
+				break;
+			case DWMODE:
+
+				break;
+			case PRMODE:
+
+				break;
+			case PWKB:
+				//changeKbParam(msg);
+				break;
+			case DWTEL:
+				printTelemetry(msg);
+				break;
+			default:
+				printf("ERROR\n");
+				break;
+		}
+		slideRecMsg(1);
+	}
+}
+
+
+// Author: Vincent Bejach
+/* Implement the FSM defined for the communication protocol.
+ * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
+ * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
+ */
+void processPkt() {
+ while (readIndex < buffCount) {
+   switch (packState) {
+	 case wait:
+	   //fprintf(stderr, "\nWAIT!\n");
+	   //printf("READ %02X\n", recChar[readIndex]);
+	   if (recChar[readIndex] == STARTBYTE) {
+		 //fprintf(stderr, "START\n");
+		 ++readIndex;
+		 packState = first_byte_received;
+	   }
+	   else {
+		 slideMsg(1);
+	   }
+	   break;
+	 case first_byte_received:
+	   msglen = cmd2len(recChar[readIndex++]);
+	   packState = receiveMsg;
+	   if (msglen == 0) {
+		 slideMsg(1);
+		 packState = wait;
+	   }
+	   //fprintf(stderr, "\nFIRST!\n");
+	   break;
+	 case receiveMsg:
+	   if (readIndex < msglen - 1) {
+		 ++readIndex;
+	   }
+	   else {
+		 packState = CRC_Check;
+	   }
+	   //fprintf(stderr, "\nRECV\n");
+	   break;
+	   case CRC_Check:
+	 //   fprintf(stderr, "\nRECEIVED MESSAGE: ");
+	 //   for(int i = 0; i < msglen; ++i) {
+		//    fprintf(stderr, "%02X ", recChar[i]);
+	 //   }
+	 //   fprintf(stderr, "\n");
+	   if (checkCRC(recChar, msglen)) {
+	   receivedMsg[++recBuff] = getPayload(msglen);
+	   processRecMsg();
+		 slideMsg(msglen);
+		 packState = wait;
+	   }
+	   else {
+		 fprintf(stderr, "CRC FAIL!\n");
+		 slideMsg(1);
+		 packState = wait;
+	   }
+	   //printf("\nCRC!\n");
+	   break;
+	 case panic:
+	   //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+	   //panic_on = true;
+	   break;
+	 default:
+	   packState = panic;
+   }
+ }
 }
 
 /*----------------------------------------------------------------
@@ -444,11 +570,9 @@ bool checkJoystick() {
 
 int main(int argc, char **argv)
 {
-	char c;
-	struct timeval start;
-	struct timeval tm1, tm2;
+	int16_t		c;
+	struct timeval	tm1, tm2;
 	long long diff;
-	long long absdiff;
 	bool exit = false;
 	bool js_conn = true;
 	// bool prev_js_conn = true;
@@ -461,7 +585,7 @@ int main(int argc, char **argv)
 
 	term_initio();
 	rs232_open();
-	js_open();
+	//js_open();
 
 	term_puts("Type ^C to exit\n");
 	initProtocol();
@@ -475,7 +599,7 @@ int main(int argc, char **argv)
 		//exit(1);
 	}
 	gettimeofday(&tm1, NULL);
-	gettimeofday(&start, NULL);
+	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 
 
 
@@ -486,38 +610,29 @@ int main(int argc, char **argv)
 
 	/* send & receive
 	 */
-
+	 int counter = 0;
 	for (;;)
 	{
-		if ((c = term_getchar_nb()) != -1) {
-			fprintf(stderr, "char: %c\n",c);
+		if ((c = term_getchar_nb()) != -1){
 			process_key(c);
 			if (c == 'e')
 				exit = true;
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
-		absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-		if (diff >= 20 && absdiff >= 3000) {
+		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			js_conn = checkJoystick();
-			//if(js_conn && prev_js_conn)
+			checkJoystick();
+			//axis[3] = 32768;
 			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16383);
-			// else if(!js_conn && prev_js_conn){
-			// 	//send panic mode message
-			// 	process_key(49);
-			// 	prev_js_conn = false;
-			// }
-			//printf()			// for (int i = 0; i < 4; ++i) {
-			//      axis[i]++;
-			// }
-			//if ((c = term_getchar_nb()) != -1)
-			//	rs232_putchar(c);
 		}
 
-		if ((c = rs232_getchar_nb()) != -1)
-			term_putchar(c);
+		if ((c = rs232_getchar_nb()) != -1) {
+			recChar[buffCount] = (uint8_t)c;
+			++buffCount;
+			processPkt();
+		}
 		if (exit)
 			break;
 	}

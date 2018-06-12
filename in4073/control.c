@@ -118,7 +118,7 @@ void run_filters_and_control(enum states *state){
 			pitch = p1 * ((axis[1]>>3) - (theta-theta_avg)) + p2*(sq-sq_avg);
 			roll = p1 * ((axis[0]>>3) - (phi-phi_avg)) - p2*(sp-sp_avg);
 			yaw = p * ((axis[2]>>3) - (sr-sr_avg));
-			lift = axis[3]*30;
+			lift = axis[3]*40;
 			break;
 
 		case Raw_Mode:
@@ -137,10 +137,10 @@ void run_filters_and_control(enum states *state){
             // f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
 
             //Control with filtered Data
-            pitch = p1 * (axis[1]/10 - f_d.theta_kalman) + p2*(sq-sq_avg);
-            roll = p1 * (axis[0]/10 - f_d.phi_kalman) - p2*(sp-sp_avg);
-            yaw = p * (axis[2]/100 - f_d.sr_filtered);
-            lift = axis[3]*30;
+            pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(sq-sq_avg);
+            roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(sp-sp_avg);
+            yaw = p * ((axis[2]>>3) - f_d.sr_filtered);
+            lift = axis[3]*40;
 			break;
 
 		case Height_Mode:

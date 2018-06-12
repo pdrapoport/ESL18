@@ -22,10 +22,10 @@ void write_packet_flash(){
         packet[2] = secondByte(timestamp);
         packet[3] = lowByte(timestamp);
         packet[4] = state;
-        packet[5] = calibration_done;
+        packet[5] = start_logging;
         for(int i = 0; i < 4; ++i) {
-            packet[6 + 2 * i] = lowByte(ae[i]);
-            packet[6 + 2 * i + 1] = highByte(ae[i]);
+            packet[6 + 2 * i] = highByte(ae[i]);
+            packet[6 + 2 * i + 1] = lowByte(ae[i]);
         }
         tmp = phi - phi_avg;
         packet[14] = highByte(tmp);
@@ -33,13 +33,13 @@ void write_packet_flash(){
         tmp = theta - theta_avg;
         packet[16] = highByte(tmp);
         packet[17] = lowByte(tmp);
-        tmp = psi - psi_avg;
+        tmp = f_d.phi_kalman;
         packet[18] = highByte(tmp);
         packet[19] = lowByte(tmp);
-        tmp = sp - sp_avg;
+        tmp = f_d.sax_filtered;
         packet[20] = highByte(tmp);
         packet[21] = lowByte(tmp);
-        tmp = sq - sq_avg;
+        tmp = f_d.say_filtered;
         packet[22] = highByte(tmp);
         packet[23] = lowByte(tmp);
         tmp = sr - sr_avg;
@@ -51,15 +51,15 @@ void write_packet_flash(){
         tmp = say - say_avg;
         packet[28] = highByte(tmp);
         packet[29] = lowByte(tmp);
-        tmp = saz - saz_avg;
+        tmp = f_d.sr_filtered;
         packet[30] = highByte(tmp);
         packet[31] = lowByte(tmp);
         packet[32] = highByte(bat_volt);
         packet[33] = lowByte(bat_volt);
-        packet[34] = fourthByte(add); //SAVE ADDRESS JUST FOR TESTING
-        packet[35] = thirdByte(add);
-        packet[36] = secondByte(add);
-        packet[37] = lowByte(add);
+        packet[34] = fourthByte(temperature); //SAVE ADDRESS JUST FOR TESTING
+        packet[35] = thirdByte(temperature);
+        packet[36] = secondByte(temperature);
+        packet[37] = lowByte(temperature);
         packet[38] = fourthByte(pressure);
         packet[39] = thirdByte(pressure);
         packet[40] = secondByte(pressure);
@@ -101,7 +101,7 @@ void print_to_terminal(uint8_t * packet){  //THIS HAS TO BE REPLACED BY THE PROT
         printf("%6d %6d %6d ",combineByte(packet[20],packet[21]),combineByte(packet[22],packet[23]),combineByte(packet[24],packet[25]));
         printf("%6d %6d %6d ",combineByte(packet[26],packet[27]),combineByte(packet[28],packet[29]),combineByte(packet[30],packet[31]));
         printf("%4d ", combineByte(packet[32],packet[33]));
-        printf("0x%08lx %6ld ",combine32Byte(packet[34],packet[35],packet[36],packet[37]),combine32Byte(packet[38],packet[39],packet[40],packet[41]));
+        printf("%4ld %6ld ",combine32Byte(packet[34],packet[35],packet[36],packet[37]),combine32Byte(packet[38],packet[39],packet[40],packet[41]));
         printf("\n");
     }
 }

@@ -628,7 +628,7 @@ int main(int argc, char **argv)
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			checkJoystick();
 			//if(js_conn && prev_js_conn)
-            axis[3] = 32767;
+            //axis[3] = 32767;
 			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16383);
 			// else if(!js_conn && prev_js_conn){
 			// 	//send panic mode message
@@ -650,7 +650,7 @@ int main(int argc, char **argv)
 			processPkt();
 		}
 		else
-			term_puts(c);
+			term_putchar(c);
 		}
 		if (exit)
 			break;

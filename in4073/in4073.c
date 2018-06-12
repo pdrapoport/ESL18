@@ -603,14 +603,17 @@ int main(void)
 	ble_init();
 	initProtocol();
 	initValues();
+    uint32_t lts;
 	//dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 	uint8_t packet[42];
-    bool connection_lost = false;
-	long connection_start_time = get_time_us() + 2350000;
+    //bool connection_lost = false;
+	//long connection_start_time = get_time_us() + 2350000;
 	//uint32_t tm2, tm1;
 	uint32_t counter = 0;
     DMP = true;
 	//tm1 = get_time_us();
+    lts = get_time_us();
+
 	while (!demo_done)
 	{
       //connection_lost = false;
@@ -627,7 +630,7 @@ int main(void)
 			read_baro();
 			processRecMsg();
 		 	//printf("processrecmsg\n");
-			//printf("%10ld | %2d | ", get_time_us(), state);
+			//printf("%10ld | %2d \n ", get_time_us(), state);
 			//printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
 			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
 			//printf("%6d %6d %6d | ", sp-sp_avg, sq-sq_avg, sr-sr_avg);
@@ -661,8 +664,8 @@ int main(void)
        filter = sr_butterworth;
        f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
      }
-           else
-               get_dmp_data();
+       else
+           get_dmp_data();
 
      run_filters_and_control(&state);
 

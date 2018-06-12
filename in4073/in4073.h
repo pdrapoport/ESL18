@@ -86,11 +86,11 @@ enum filters {
 } filter;
 
 struct filtered_data {
-    int say_filtered;
-    int phi_kalman;
-    int sax_filtered;
-    int theta_kalman;
-    int sr_filtered;
+    int16_t say_filtered;
+    int16_t phi_kalman;
+    int16_t sax_filtered;
+    int16_t theta_kalman;
+    int16_t sr_filtered;
 } f_d;
 
 int butterworth_filter(int raw_data, enum filters *filter);

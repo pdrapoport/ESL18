@@ -549,7 +549,7 @@ int main(int argc, char **argv)
 
 	term_initio();
 	rs232_open();
-	//js_open();
+	js_open();
 
 	term_puts("Type ^C to exit\n");
 	initProtocol();

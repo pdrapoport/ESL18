@@ -49,22 +49,6 @@ void initValues(){
  *------------------------------------------------------------------
  */
 
-const char* getCurrentState(enum states state)
-{
-   switch (state)
-   {
-      case Safe_Mode: return "Safe_Mode";
-      case Panic_Mode: return "Panic_Mode";
-      case Manual_Mode: return "Manual_Mode";
-      case Calibration_Mode: return "Calibration_Mode";
-      case Yaw_Mode: return "Yaw_Mode";
-      case Full_Mode: return "Full_Mode";
-      case Raw_Mode: return "Raw_Mode";
-      case Height_Mode: return "Height_Mode";
-      case Wireless_Mode: return "Wireless_Mode";
-      default: return "Error";
-   }
-}
 
 bool checkJS(){
     return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
@@ -205,7 +189,7 @@ void step(enum states * state, int c) {
 
         case Panic_Mode:
             nrf_gpio_pin_toggle(RED);
-            if (c == '0' && !checkMotor() && ((bat_volt > 1110) || (bat_volt < 650)))
+            if (c == '0' && !checkMotor() && ((bat_volt > 1050) || (bat_volt < 650)))
                 * state = Safe_Mode;
             break;
 
@@ -593,7 +577,7 @@ int main(void)
 
   //long connection_start_time = get_time_us() + 2350000;
 
-	long connection_start_time = get_time_us() + 2350000;
+	long connection_start_time = get_time_us() + 2400000;
 
     uint32_t counter = 0;
     // uint8_t bat_counter = 0;
@@ -644,12 +628,12 @@ int main(void)
             //printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
 			//printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
   			clear_timer_flag();
-            printf("%10ld | %2d | ", get_time_us(), state);
-            printf("%5d | %3d %3d %3d %3d | ", axis[3], ae[0], ae[1], ae[2], ae[3]);
-            printf("%6d %6d %6d | ", phi - phi_avg, theta - theta_avg, psi - psi_avg);
-            printf("%6d %6d %6d | ", sp - sp_avg, sq - sq_avg, sr - sr_avg);
-            printf("%6d %6d %6d | ", sax - sax_avg, say - say_avg, saz - saz_avg);
-            printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
+            // printf("%10ld | %2d | ", get_time_us(), state);
+            // printf("%5d | %3d %3d %3d %3d | ", axis[3], ae[0], ae[1], ae[2], ae[3]);
+            // printf("%6d %6d %6d | ", phi - phi_avg, theta - theta_avg, psi - psi_avg);
+            // printf("%6d %6d %6d | ", sp - sp_avg, sq - sq_avg, sr - sr_avg);
+            // printf("%6d %6d %6d | ", sax - sax_avg, say - say_avg, saz - saz_avg);
+            // printf("%4d | %4ld | %6ld | %2d | %2d | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p, p1, p2);
 
         }
 

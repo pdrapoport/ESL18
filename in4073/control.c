@@ -27,7 +27,7 @@ void update_motors(void)
 	motor[1] = ae[1];
 	motor[2] = ae[2];
 	motor[3] = ae[3];
-	motors_off = true;
+	//motors_off = true;
 	for (int i = 0; i < 4; ++i) {
 		motors_off &= (motor[i] == 0);
 	}
@@ -122,24 +122,32 @@ void run_filters_and_control(enum states *state){
 				}
 			}
 			//check if the motor has turned off
-			if(!motor[0] && !motor[1] && !motor[2] && !motor[3]) {no_failure = true;motors_off = true;}
+			if(!checkMotor()) {no_failure = true;motors_off = true;}
 			break;
 	}
 
 	if (*state != Panic_Mode){
-		ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
-		ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
-		ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
-		ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
+		if(axis[3] >= 10){
+			ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
+			ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
+			ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
+			ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
 
-		for (int i = 0; i < 4; i++){
-			//ae[i] = ae[i]*6; //Scaling Factor
-			if (ae[i] >= 800)
-				ae[i] = 800;
-			else if (lift > 5910 && ae[i] <= 200)
-				ae[i] = 200;
-			else if (ae[i]<0)
-				ae[i] = 0;
+			for (int i = 0; i < 4; i++){
+				//ae[i] = ae[i]*6; //Scaling Factor
+				if (ae[i] >= 800)
+					ae[i] = 800;
+				else if (lift > 5910 && ae[i] <= 200)
+					ae[i] = 200;
+				else if (ae[i]<0)
+					ae[i] = 0;
+			}
+		}
+		else {
+			ae[0] = 0;
+			ae[1] = 0;
+			ae[2] = 0;
+			ae[3] = 0;
 		}
 
 		//printf("ae_0 = %6d | ae_2 = %6d | ae_2 = %6d | ae_3 = %6d\n", ae[0], ae[1], ae[2], ae[3]);

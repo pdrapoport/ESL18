@@ -22,7 +22,7 @@ enum states state;
 void initValues(){
   b = 1;
   d = 10;
-  p = 1000;
+  p = 1610;
   p1 = 50;
   p2 = 110;
 
@@ -189,7 +189,7 @@ void step(enum states * state, int c) {
 
         case Panic_Mode:
             nrf_gpio_pin_toggle(RED);
-            if (c == '0' && !checkMotor() && ((bat_volt > 1050) || (bat_volt < 650)))
+            if (c == '0' && !checkMotor() && ((bat_volt > 1000) || (bat_volt < 650)))
                 * state = Safe_Mode;
             break;
 
@@ -308,23 +308,23 @@ void process_key(uint8_t c) {
             break;
         case 43:
             //pitch down
-            if (axis_offset[1] < 31767)
-                axis_offset[1] += 1000;
-            break;
-        case 95:
-            //pitch up
-            if (axis_offset[1] > -31767)
-                axis_offset[1] -= 1000;
-            break;
-        case 40:
-            //roll up
             if (axis_offset[0] < 31767)
                 axis_offset[0] += 1000;
             break;
-        case 41:
-            //roll down
+        case 95:
+            //pitch up
             if (axis_offset[0] > -31767)
                 axis_offset[0] -= 1000;
+            break;
+        case 40:
+            //roll up
+            if (axis_offset[1] < 31767)
+                axis_offset[1] += 1000;
+            break;
+        case 41:
+            //roll down
+            if (axis_offset[1] > -31767)
+                axis_offset[1] -= 1000;
             break;
         case 27:
             demo_done = true;
@@ -603,7 +603,7 @@ int main(void)
             // sum_bat_volt += bat_volt;
             // if(!(bat_counter++ % 10)){
             //     sum_bat_volt /= 10;
-                if(bat_volt < 1040){
+                if(bat_volt < 1000){
                     state = Panic_Mode;
                 }
             //     sum_bat_volt = 0;

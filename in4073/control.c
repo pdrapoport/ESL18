@@ -44,7 +44,7 @@ void run_filters_and_control(enum states *state){
 			roll = axis[0]*8; //L roll
 			pitch = axis[1]*8; //M pitch
 			yaw = axis[2]*30; //N yaw
-			lift = axis[3]*30; //Z lift
+			lift = axis[3]*40; //Z lift
 			break;
 
 		case Calibration_Mode:
@@ -88,15 +88,15 @@ void run_filters_and_control(enum states *state){
 		case Yaw_Mode:
 			roll = axis[0]*8;
 			pitch = axis[1]*8;
-			yaw = p * (axis[2]/10 - (sr-sr_avg));
-			lift = axis[3]*30;
+			yaw = p * ((axis[2]>>4) - (-sr-sr_avg));
+			lift = axis[3]*40;
 			break;
 
 		case Full_Mode:
-			pitch = p1 * ((axis[1]>>3) - (theta-theta_avg)) + p2*(sq-sq_avg);
-			roll = p1 * ((axis[0]>>3) - (phi-phi_avg)) - p2*(sp-sp_avg);
-			yaw = p * ((axis[2]>>3) - (sr-sr_avg));
-			lift = axis[3]*30;
+			pitch = p1 * ((axis[1]>>4) - (theta-theta_avg)) + p2*(sq-sq_avg);
+			roll = p1 * ((axis[0]>>4) - (phi-phi_avg)) - p2*(sp-sp_avg);
+			yaw = p * ((axis[2]>>4) - (-sr-sr_avg));
+			lift = axis[3]*40;
 			break;
 
 		case Raw_Mode:

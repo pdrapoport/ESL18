@@ -110,7 +110,7 @@ void rs232_open(void)
 	int result;
 	struct termios tty;
 
-       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
 	assert(fd_RS232>=0);
 
 	result = isatty(fd_RS232);
@@ -159,7 +159,7 @@ void    rs232_close(void)
 
 
 
-int     rs232_getchar_nb()
+int rs232_getchar_nb()
 {
 	int result;
 	unsigned char c;
@@ -575,6 +575,7 @@ int main(int argc, char **argv)
 	long long diff;
 	bool exit = false;
 	bool js_conn = true;
+	bool esc = false;
 	// bool prev_js_conn = true;
 
 	for (int i = 0; i < 4; ++i) {
@@ -617,6 +618,8 @@ int main(int argc, char **argv)
 			process_key(c);
 			if (c == 'e')
 				exit = true;
+			if (c == 27)
+				esc = true;
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
@@ -624,14 +627,29 @@ int main(int argc, char **argv)
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
 			checkJoystick();
-			//axis[3] = 32768;
+			//if(js_conn && prev_js_conn)
 			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16383);
+			// else if(!js_conn && prev_js_conn){
+			// 	//send panic mode message
+			// 	process_key(49);
+			// 	prev_js_conn = false;
+			// }
+			//printf()			// for (int i = 0; i < 4; ++i) {
+			//      axis[i]++;
+			// }
+			//if ((c = term_getchar_nb()) != -1)
+			//	rs232_putchar(c);
+
 		}
 
 		if ((c = rs232_getchar_nb()) != -1) {
+			if (!esc){
 			recChar[buffCount] = (uint8_t)c;
 			++buffCount;
 			processPkt();
+		}
+		else
+			term_puts(c);
 		}
 		if (exit)
 			break;

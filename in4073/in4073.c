@@ -20,24 +20,26 @@
 enum states state;
 
 void initValues(){
-  b = 1;
-  d = 10;
-  p = 1000;
-  p1 = 50;
-  p2 = 110;
-
-	demo_done = false;
-	state = Safe_Mode;
-	sp_avg = 0;
-	sq_avg = 0;
-	sr_avg = 0;
-	sax_avg = 0;
-	say_avg = 0;
-	saz_avg = 0;
-	motors_off = true;
-	calibration_done = false;
-	no_failure = true;
-	last_rec_pkt = get_time_us();
+    b = 1;
+    d = 10;
+    p = 1000;
+    p1 = 50;
+    p2 = 110;
+    flash_full = false;
+    read_completed = false;
+    start_logging = false;
+    demo_done = false;
+    state = Safe_Mode;
+    sp_avg = 0;
+    sq_avg = 0;
+    sr_avg = 0;
+    sax_avg = 0;
+    say_avg = 0;
+    saz_avg = 0;
+    motors_off = true;
+    calibration_done = false;
+    no_failure = true;
+    last_rec_pkt = get_time_us();
 
 	for (int i = 0; i<4; i++)
 		axis_offset[i] = 0;
@@ -47,23 +49,6 @@ void initValues(){
  * FSM FCB
  ****------------------------------------------------------------------
  */
-
-const char* getCurrentState(enum states state)
-{
-	switch (state)
-	{
-	case Safe_Mode: return "Safe_Mode";
-	case Panic_Mode: return "Panic_Mode";
-	case Manual_Mode: return "Manual_Mode";
-	case Calibration_Mode: return "Calibration_Mode";
-	case Yaw_Mode: return "Yaw_Mode";
-	case Full_Mode: return "Full_Mode";
-	case Raw_Mode: return "Raw_Mode";
-	case Height_Mode: return "Height_Mode";
-	case Wireless_Mode: return "Wireless_Mode";
-	default: return "Error";
-	}
-}
 
 bool checkJS(){
 	return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
@@ -377,7 +362,6 @@ void process_key(uint8_t c){
 		step(&state,'0');
 		break;
 	case 'p':
-		printf("%s\n",getCurrentState(state));
 		break;
 	default:
 		nrf_gpio_pin_toggle(RED);
@@ -456,75 +440,9 @@ void processPkt() {
 			//TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
 			//panic_on = true;
 			break;
-		case 'k':
-			//roll, pitch control p1 down
-      if(p1 > 0) p1-=1;
-			break;
-		case 'o':
-			//roll, pitch control p2 up
-      p2+=1;
-			break;
-		case 'l':
-			//roll, pitch control p2 down
-      if(p2 > 1) p2-=1;
-			break;
-		case 43:
-			//pitch down
-            if (axis_offset[1]<31767)
-                axis_offset[1] += 1000;
-			break;
-		case 95:
-			//pitch up
-            if (axis_offset[1]> -31767)
-                axis_offset[1] -= 1000;
-			break;
-		case 40:
-			//roll up
-            if (axis_offset[0]<31767)
-                axis_offset[0] += 1000;
-			break;
-		case 41:
-			//roll down
-            if (axis_offset[0]> -31767)
-                axis_offset[0] -= 1000;
-			break;
-		case 27:
-			demo_done = true;
-			break;
-
-    //modes
-	case '1':
-	  nrf_gpio_pin_toggle(RED);
-      no_failure = false;
-      step(&state,'1');
-			break;
-    case '2':
-      step(&state,'2');
-      break;
-    case '3':
-      step(&state,'3');
-      break;
-    case '4':
-      step(&state,'4');
-      break;
-    case '5':
-      step(&state,'5');
-      break;
-    case '6':
-      step(&state,'6');
-      break;
-    case '7':
-      step(&state,'7');
-      break;
-    case '8':
-      step(&state,'8');
-      break;
-    case '0':
-      step(&state,'0');
-      break;
-    default:
-      nrf_gpio_pin_toggle(RED);
-      break;
+        default:
+            packState = panic;
+        }
 	}
 }
 
@@ -731,40 +649,31 @@ int main(void)
 	initProtocol();
     initValues();
     //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
-
+    int packet[36];
   //long connection_start_time = get_time_us() + 2350000;
 
-    //uint32_t tm2, tm1, diff;
+    //uint32_t tm2, tm1;
 	uint32_t counter = 0;
     uint32_t lts = get_time_us();
 
-	nrf_delay_ms(500);
-	write_packet_flash();
-	nrf_delay_ms(500);
-	read_packet_flash(packet);
-	tm1 = get_time_us();
+
+	//tm1 = get_time_us();
 	while (!demo_done)
 	{
       //connection_lost = false;
   		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
   		processPkt();
-
+        if (check_timer_flag()) //40 ms
+        {
 			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
-			// adc_request_sample();
-			// if (bat_volt < 500) {
-			//      //state = Panic_Mode;
-			// }
-			//printf("adc req\n");
-			//read_baro();
-			//printf("read baro\n");
-
-			//printf("test %d\n",i++);
-			//processRecMsg();
-		// 	//printf("processrecmsg\n");
-
-  			//printf("test %d\n",i++);
-  			//printf("processrecmsg\n");
+			adc_request_sample();
+			if (bat_volt < 500) {
+			     //state = Panic_Mode;
+			 }
+			read_baro();
+			processRecMsg();
+		 	//printf("processrecmsg\n");
 			//printf("%10ld | %2d | ", get_time_us(), state);
 			//printf("%5d | %3d %3d %3d %3d | ",axis[3],ae[0],ae[1],ae[2],ae[3]);
 			//printf("%6d %6d %6d | ", phi-phi_avg, theta-theta_avg, psi-psi_avg);
@@ -772,48 +681,53 @@ int main(void)
             //printf("%6d %6d %6d | ", sax-sax_avg, say-say_avg, saz-saz_avg);
 			//printf("%4d | %4ld | %6ld | %2d | %2d | %2d \n", bat_volt, temperature, pressure, b, d, p);
   			clear_timer_flag();
-
-			// if (DMP)
-			// 	get_dmp_data();
-			// else
-			// 	get_raw_sensor_data();
-			//
-			// // Run Filters
-			// if (state == Raw_Mode) {
-			// 	filter = say_butterworth;
-			// 	f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
-			// 	filter = kalman_phi;
-			// 	f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,&filter);
-			//
-			// 	filter = sax_butterworth;
-			// 	f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
-			// 	filter = kalman_theta;
-			// 	f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
-			//
-			// 	filter = sr_butterworth;
-			// 	f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
-			// }
-			//
-			// run_filters_and_control(&state);
+        }
 
         if ((get_time_us() - lts) > 100000) {
             sendTelemetryPacket();
             lts = get_time_us();
         }
 
-  		if (check_sensor_int_flag())
-  		{
-            //tm2 = get_time_us();
-            //diff = (tm2 - tm1)/ 1000;
-            //printf("%4ld \n ", diff);
-            //tm1 = tm2;
-  			get_dmp_data();
-  			run_filters_and_control(&state);
-  		}
+        if (check_sensor_int_flag())
+   {
+           //tm1 = get_time_us();
+     // Run Filters
+     if (!DMP){
+       get_raw_sensor_data();
 
+       filter = say_butterworth;
+       f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
+       filter = kalman_phi;
+       f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,&filter);
 
-  	}
-	nrf_delay_ms(100);
+       filter = sax_butterworth;
+       f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
+       filter = kalman_theta;
+       f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
 
-	NVIC_SystemReset();
-}
+       filter = sr_butterworth;
+       f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
+     }
+           else
+               get_dmp_data();
+
+     run_filters_and_control(&state);
+
+     //tm2 = get_time_us();
+     //diff = tm2-tm1;
+
+     if (!flash_full && start_logging)
+         write_packet_flash();
+     }
+    }
+
+    while(!read_completed){
+     read_packet_flash(packet);
+     print_to_terminal(packet);
+     nrf_delay_ms(10);
+    }
+
+    printf("\n\t Goodbye \n\n");
+    nrf_delay_ms(100);
+    NVIC_SystemReset();
+    }

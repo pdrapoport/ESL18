@@ -56,7 +56,7 @@ bool DMP;
 
 bool calibration_done; // Update after the calibration is done
 bool motors_off; // Update according to the readings
-unsigned int p, p1, p2;
+unsigned int p, p1, p2,b,d;
 bool no_failure;
 void run_filters_and_control();
 void initValues();

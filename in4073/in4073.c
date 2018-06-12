@@ -203,19 +203,6 @@ void step(enum states * state, int c) {
         }
         break;
 
-        // WIRELESS MODE
-        case Wireless_Mode:
-            if (!no_failure)
-                * state = Panic_Mode;
-            // Call for Panic_Mode function required
-            else if (c == '0' && !checkMotor()) { * state = Safe_Mode;
-                printf("Safe_Mode Selected\n");
-                // Call for Safe_Mode function required
-            } else {
-                printf("No mode selected\n");
-            }
-            break;
-
         case Panic_Mode:
             nrf_gpio_pin_toggle(RED);
             if (c == '0' && !checkMotor() && ((bat_volt > 1110) || (bat_volt < 650)))
@@ -469,7 +456,7 @@ void process_key(uint8_t c) {
         packState = panic;
     }
 }
-
+ }
 void processRecMsg(){
 	if(recBuff != 0){
 		uint8_t idCmd = receivedMsg[1].idCmd;
@@ -590,7 +577,7 @@ void sendTelemetryPacket() {
 
 int main(void)
 {
-    //bool connection_lost = false;
+    bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();

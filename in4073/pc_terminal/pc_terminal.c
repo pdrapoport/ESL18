@@ -101,14 +101,8 @@ void rs232_open(void) {
     int result;
     struct termios tty;
 
-<<<<<<< master
        	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
 	assert(fd_RS232>=0);
-=======
-    fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY); // Hardcode your serial port here, or request it as an argument at runtime
-    printf("%d\n", fd_RS232);
-    assert(fd_RS232 >= 0);
->>>>>>> some cleaning, added avg voltage check
 
     result = isatty(fd_RS232);
     assert(result == 1);
@@ -152,7 +146,6 @@ void rs232_close(void) {
     assert(result == 0);
 }
 
-<<<<<<< master
 
 
 int	rs232_getchar_nb()
@@ -177,28 +170,6 @@ int	rs232_getchar_nb()
 		assert(result == 1);
 		return (int16_t) c;
 	}
-=======
-int rs232_getchar_nb() {
-    int result;
-    unsigned char c;
-
-    int rv = select(fd_RS232 + 1, & set, & set, & set, & timeout);
-    if (rv == -1) {
-        perror("select");
-        result = 0;
-    } 
-	else if (FD_ISSET(fd_RS232, & set))
-        result = 0;
-    else
-        result = read(fd_RS232, & c, 1);
-
-    if (result == 0)
-        return -1;
-    else {
-        assert(result == 1);
-        return (int) c;
-    }
->>>>>>> some cleaning, added avg voltage check
 }
 
 int rs232_getchar() {
@@ -221,8 +192,8 @@ int rs232_putchar(char c) {
 
 void js_open() {
     term_puts("\nConnecting joystick...\n");
-    fd_js = open(JS_DEV, O_RDONLY);
-    //fd_js = open(JS_DEV_RES, O_RDONLY);
+    // fd_js = open(JS_DEV, O_RDONLY);
+    fd_js = open(JS_DEV_RES, O_RDONLY);
     assert(fd_js >= 0);
 
     fcntl(fd_js, F_SETFL, O_NONBLOCK);
@@ -409,13 +380,11 @@ void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw) {
 }
 
 bool checkJoystick() {
-<<<<<<< master
     while (read(fd_js,&js,sizeof(struct js_event)) == sizeof(struct js_event))  {
 		switch(js.type & ~JS_EVENT_INIT) {
 			case JS_EVENT_BUTTON:
-				button[js.number] = js.value;
 				//fprintf(stderr,"but %d: %d\n",js.number,js.value);
-				if(button[js.number] == 1) process_joystick(js.number);
+				if(js.value == 1) process_joystick(js.number);
 				break;
 			case JS_EVENT_AXIS:
 				axis[js.number] = js.value;
@@ -445,26 +414,6 @@ void printTelemetry(uint8_t *msg) {
 	fprintf(stderr, " %4d |", combineByte(msg[32], msg[33]));
 	fprintf(stderr, " %5d | %7d\n", combine32Byte(msg[34], msg[35], msg[36], msg[37]),
 									combine32Byte(msg[38], msg[39], msg[40], msg[41]));
-=======
-    while (read(fd_js, & js, sizeof(struct js_event)) == sizeof(struct js_event)) {
-        switch (js.type & ~JS_EVENT_INIT) {
-        case JS_EVENT_BUTTON:
-            button[js.number] = js.value;
-            //fprintf(stderr,"but %d: %d\n",js.number,js.value);
-            if (button[js.number] == 1) process_joystick(js.number);
-            break;
-        case JS_EVENT_AXIS:
-            axis[js.number] = js.value;
-            //printf("axis %d: %d\n",js.number,js.value);
-            break;
-        }
-    }
-
-    if (errno != EAGAIN)
-        return false;
-
->>>>>>> some cleaning, added avg voltage check
-    return true;
 }
 
 void processRecMsg(){
@@ -583,15 +532,14 @@ void processPkt() {
  *----------------------------------------------------------------
  */
 
-<<<<<<< master
 int main(int argc, char **argv)
 {
 	int16_t		c;
 	struct timeval	tm1, tm2;
 	long long diff;
 	bool exit = false;
-	bool js_conn = true;
-	bool prev_js_conn = true;
+	bool js_conn = false;
+	bool prev_js_conn = false;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
@@ -648,76 +596,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-=======
-int main(int argc, char * * argv) {
-    char c;
-    struct timeval start;
-    struct timeval tm1, tm2;
-    long long diff;
-    long long absdiff;
-    bool exit = false;
-    bool js_conn = true;
-    bool prev_js_conn = true;
-
-    for (int i = 0; i < 4; ++i) {
-        axis[i] = 0;
-    }
-
-    term_puts("\nTerminal program - Embedded Real-Time Systems\n");
-
-    term_initio();
-    rs232_open();
-    js_open();
-
-    term_puts("Type ^C to exit\n");
-    initProtocol();
-
-    gettimeofday(&tm1, NULL);
-    gettimeofday(&start, NULL);
-
-    /* discard any incoming text
-     */
-    //while ((c = rs232_getchar_nb()) != -1)
-    //fputc(c,stderr);
-
-    /* send & receive
-     */
-    for (;;) {
-        if ((c = term_getchar_nb()) != -1) {
-            fprintf(stderr, "char: %c\n", c);
-            process_key(c);
-            if (c == 'e')
-                exit = true;
-        }
-        gettimeofday( & tm2, NULL);
-        diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
-        absdiff = 1000 * (tm2.tv_sec - start.tv_sec) + (tm2.tv_usec - start.tv_usec) / 1000;
-        if (diff >= 15 && absdiff >= 3000) {
-            gettimeofday( & tm1, NULL);
-            //fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-            js_conn = checkJoystick();
-
-            if (js_conn && prev_js_conn)
-                sendLRPY(axis[0], axis[1], axis[2], ((-1) * axis[3] / 2) + 16384);
-            else if (!js_conn && prev_js_conn) {
-                //send panic mode message
-                process_key(49);
-                //fprintf(stderr,"JS Connection Broke!\n");
-                prev_js_conn = false;
-            }
-        }
-
-        if ((c = rs232_getchar_nb()) != -1)
-            term_putchar(c);
-        if (exit)
-            break;
-    }
-
-    term_exitio();
-    rs232_close();
-    close(fd_js);
-    term_puts("\n<exit>\n");
-
-    return 0;
-}
->>>>>>> some cleaning, added avg voltage check

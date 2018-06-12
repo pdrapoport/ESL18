@@ -149,5 +149,6 @@ void sendTelemetryPacket();
 bool connection_lost;
 bool motors_off; // Update according to the readings
 bool no_failure;
+bool checkMotor();
 
 #endif // IN4073_H__

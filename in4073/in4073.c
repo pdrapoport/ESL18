@@ -427,6 +427,7 @@ void process_key(uint8_t c) {
         }
         else {
           //printf("\nCRC FAIL!\n");
+          sendErrMsg(3);
           slideMsg(1);
           packState = wait;
         }

@@ -418,6 +418,9 @@ void printTelemetry(uint8_t *msg) {
 
 void printErrMsg(uint8_t *msg){
 	switch(msg[0]){
+		case 3:
+			fprintf(stderr,"\n C R C   E R R O R\n");
+			break;
 		case 4:
 			fprintf(stderr,"\nL O W   B A T T E R Y\n");
 			break;

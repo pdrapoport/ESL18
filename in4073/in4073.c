@@ -553,6 +553,16 @@ void sendTelemetryPacket() {
     free(msg);
 }
 
+void sendErrMsg(uint8_t errNum){
+    uint8_t packet[1];
+    packet[0] = errNum;
+    msglen = cmd2len(DWERR);
+    uint8_t *msg = makePayload(DWERR, packet);
+    for(int i = 0; i < 6; ++i){
+        uart_put(msg[i]);
+    }
+    free(msg);
+}
 
 /*------------------------------------------------------------------
  * main -- everything you need is here :)
@@ -575,13 +585,12 @@ int main(void)
     initValues();
     //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
 
-  //long connection_start_time = get_time_us() + 2350000;
 
-	long connection_start_time = get_time_us() + 2400000;
+	long connection_start_time = get_time_us()+ 1000000;
 
     uint32_t counter = 0;
-    // uint8_t bat_counter = 0;
-    // uint64_t sum_bat_volt = 0;
+    uint8_t bat_counter = 0;
+    uint32_t sum_bat_volt = 1060*8;
     uint32_t lts = get_time_us();
 
     //tm1 = get_time_us();
@@ -600,14 +609,15 @@ int main(void)
             adc_request_sample();
 
             //Battery check function
-            // sum_bat_volt += bat_volt;
-            // if(!(bat_counter++ % 10)){
-            //     sum_bat_volt /= 10;
-                if(bat_volt < 1000){
+            sum_bat_volt += bat_volt;
+            if(!(bat_counter++ % 8)){
+                sum_bat_volt = sum_bat_volt>>3;
+                if(sum_bat_volt < 550){
                     state = Panic_Mode;
+                    sendErrMsg(4);
                 }
-            //     sum_bat_volt = 0;
-            // }
+                sum_bat_volt = 0;
+                }
 
             //processRecMsg();
 

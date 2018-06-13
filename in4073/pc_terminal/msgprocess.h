@@ -24,6 +24,7 @@
 #define DWTEL  0x27    //Drone2PC Telemetry Packet
 #define PRMODE 0x14    //PC2Drone Read Mode
 #define PWKB   0x13    //PC2Drone Keyboard Input
+#define DWERR  0x26
 
 //Length per CMD (in bytes)
 #define PWMODELEN  6
@@ -33,6 +34,7 @@
 #define DWMODELEN  6
 #define PRMODELEN  5
 #define PWKBLEN    6
+#define DWERRLEN   6
 
 #define ADDBYTES 5
 

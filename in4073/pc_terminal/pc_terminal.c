@@ -192,8 +192,8 @@ int rs232_putchar(char c) {
 
 void js_open() {
     term_puts("\nConnecting joystick...\n");
-    fd_js = open(JS_DEV, O_RDONLY);
-    // fd_js = open(JS_DEV_RES, O_RDONLY);
+    // fd_js = open(JS_DEV, O_RDONLY);
+    fd_js = open(JS_DEV_RES, O_RDONLY);
     assert(fd_js >= 0);
 
     fcntl(fd_js, F_SETFL, O_NONBLOCK);
@@ -416,6 +416,14 @@ void printTelemetry(uint8_t *msg) {
 									combine32Byte(msg[38], msg[39], msg[40], msg[41]));
 }
 
+void printErrMsg(uint8_t *msg){
+	switch(msg[0]){
+		case 4:
+			fprintf(stderr,"\nL O W   B A T T E R Y\n");
+			break;
+	}
+}
+
 void processRecMsg(){
 	if(recBuff != 0){
 		uint8_t idCmd = receivedMsg[1].idCmd;
@@ -423,7 +431,7 @@ void processRecMsg(){
 		uint8_t msg[MAXMSG];
 		int j = 0;
 		for(j= 0;j< msglen-ADDBYTES;j++){
-			//printf("%04x ",receivedMsg[i].msg[j]),
+			//fprintf(stderr,"%04x ",receivedMsg[1].msg[j])
 			msg[j] = receivedMsg[1].msg[j];
 		}
 
@@ -450,6 +458,9 @@ void processRecMsg(){
 				break;
 			case DWTEL:
 				printTelemetry(msg);
+				break;
+			case DWERR:
+				printErrMsg(msg);
 				break;
 			default:
 				printf("ERROR\n");

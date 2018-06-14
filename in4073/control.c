@@ -122,20 +122,6 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Raw_Mode:
-            // Run Filters
-            // filter = say_butterworth;
-            // f_d.say_filtered = butterworth_filter(say-say_avg,&filter);
-            //filter = kalman_phi;
-            //f_d.phi_kalman = kalman_filter(f_d.say_filtered,sp-sp_avg,kalman_phi);
-
-            // filter = sax_butterworth;
-            // f_d.sax_filtered = butterworth_filter(sax-sax_avg,&filter);
-            // filter = kalman_theta;
-            // f_d.theta_kalman = kalman_filter(f_d.sax_filtered,sq-sq_avg,&filter);
-
-            // filter = sr_butterworth;
-            // f_d.sr_filtered = butterworth_filter(sr-sr_avg,&filter);
-
             //Control with filtered Data
             pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(sq-sq_avg);
             roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(sp-sp_avg);

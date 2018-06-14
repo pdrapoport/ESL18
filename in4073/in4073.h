@@ -78,29 +78,29 @@ void initialize_butterworth();
 void initialize_kalman();
 
 enum filters {
-    say_butterworth,
-    sax_butterworth,
+    // say_butterworth,
+    // sax_butterworth,
     sr_butterworth,
     kalman_phi,
     kalman_theta
 } filter;
 
 struct filtered_data {
-    int16_t say_filtered;
+    //int16_t say_filtered;
     int16_t phi_kalman;
-    int16_t sax_filtered;
+    //int16_t sax_filtered;
     int16_t theta_kalman;
     int16_t sr_filtered;
 } f_d;
 
-int butterworth_filter(int raw_data, enum filters *filter);
-int kalman_filter(int filtered, int vel_read, enum filters *filter);
+int16_t butterworth_filter(int16_t raw_data, enum filters *filter);
+int16_t kalman_filter(int16_t filtered, int16_t vel_read, enum filters *filter);
 
 //Logging
 bool flash_full;
 bool read_completed;
 bool start_logging;
-void write_packet_flash(void);
+void write_packet_flash();
 void read_packet_flash(uint8_t * packet);
 void print_to_terminal(uint8_t * packet);
 

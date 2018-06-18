@@ -157,9 +157,10 @@ int16_t kalman_filter(int16_t filtered, int16_t vel_read, enum filters *filter){
 			k++;
 
 		phi_kalman = phi_kalman - fixed_div_14(phi_error,C1);
-		p_bias[1] = float2fix(p_bias[0]) + fixed_div_14(fixed_div_14(phi_error,p2phi),C2);
+		p_bias[1] = float2fix(p_bias[0]) + fixed_div_14(fixed_div_14(phi_error,p2phi),C2);//COMMENT THIS OUT
+		//p_bias[1] = float2fix(p_bias[0]) + fixed_div_14(phi_error,C2);
 		p_bias[1] = fix2float(p_bias[1]);
-
+		p_kalman = fix2float(p_kalman);
 		return fix2float(phi_kalman);
 
 	case kalman_theta:
@@ -173,9 +174,10 @@ int16_t kalman_filter(int16_t filtered, int16_t vel_read, enum filters *filter){
 		else
 			j++;
 		theta_kalman = theta_kalman - fixed_div_14(theta_error,C1);
-		q_bias[1] = float2fix(q_bias[0]) + fixed_div_14(fixed_div_14(theta_error,p2phi),C2);
+		q_bias[1] = float2fix(q_bias[0]) + fixed_div_14(fixed_div_14(theta_error,p2phi),C2); //COMMENT THIS OUT
+		// q_bias[1] = float2fix(q_bias[0]) + fixed_div_14(theta_error,C2);
 		q_bias[1] = fix2float(q_bias[1]);
-
+		q_kalman = fix2float(q_kalman);
 		return fix2float(theta_kalman);
 	// case say_butterworth:
 	// 	break;

@@ -399,82 +399,6 @@ void process_key(uint8_t c) {
 }
 
 
-// Author: Vincent Bejach
-/* Implement the FSM defined for the communication protocol.
- * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
- * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
- */
-void processPkt() {
-	receivePkt();
-	while (readIndex < buffCount) {
-		switch (packState) {
-		case wait:
-			//printf("\nWAIT!\n");
-			//printf("READ %02X\n", recChar[readIndex]);
-			if (recChar[readIndex] == STARTBYTE) {
-				//printf("START\n");
-				++readIndex;
-				packState = first_byte_received;
-			}
-			else {
-				slideMsg(1);
-			}
-			break;
-		case first_byte_received:
-			msglen = cmd2len(recChar[readIndex++]);
-			packState = receiveMsg;
-			if (msglen == 0) {
-				slideMsg(1);
-				packState = wait;
-			}
-			//printf("\nFIRST!\n");
-			break;
-		case receiveMsg:
-			if (readIndex < msglen - 1) {
-				++readIndex;
-			}
-			else {
-				packState = CRC_Check;
-			}
-			//printf("\nRECV\n");
-			break;
-		case CRC_Check:
-			if (checkCRC(recChar, msglen)) {
-				receivedMsg[++recBuff] = getPayload(msglen);
-				//printf("\nRECEIVED MESSAGE: ");
-				// for (int k = 0; k < msglen; ++k) {
-				//     printf("%02X ", recChar[k]);
-				// }
-				// printf("\n");
-				processRecMsg();
-				// if (buffCount > 13) {
-				//     printf("oldStartByte: %02X\n", recChar[13]);
-				// }
-				// printf("%d/%d -> ", readIndex, buffCount);
-				slideMsg(msglen);
-				// printf("%d/%d\n", readIndex, buffCount);
-				// if (buffCount > 0) {
-				//     printf("currentStartByte: %02X\n", recChar[0]);
-				// }
-				packState = wait;
-			}
-			else {
-				//printf("\nCRC FAIL!\n");
-				slideMsg(1);
-				packState = wait;
-			}
-			// printf("\nCRC!\n");
-			break;
-		case panic:
-			//TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
-			//panic_on = true;
-			break;
-		default:
-			packState = panic;
-		}
-	}
-}
-
  // Author: Vincent Bejach
  /* Implement the FSM defined for the communication protocol.
   * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
@@ -632,19 +556,27 @@ void sendTelemetryPacket() {
 		packet[15] = lowByte(phi - phi_avg);
 		packet[16] = highByte(theta - theta_avg);
 		packet[17] = lowByte(theta - theta_avg);
+        // packet[20] = highByte(sp-sp_avg);
+        // packet[21] = lowByte(sp-sp_avg);
+        // packet[22] = highByte(sq_avg);
+        // packet[23] = lowByte(sq_avg);
 	}
 	else{
 		packet[14] = highByte(f_d.phi_kalman);
 		packet[15] = lowByte(f_d.phi_kalman);
 		packet[16] = highByte(f_d.theta_kalman);
 		packet[17] = lowByte(f_d.theta_kalman);
+        // packet[20] = highByte(p_kalman);
+        // packet[21] = lowByte(p_kalman);
+        // packet[22] = highByte(q_kalman);
+        // packet[23] = lowByte(q_kalman);
 	}
 	packet[18] = highByte(psi - psi_avg);
 	packet[19] = lowByte(psi - psi_avg);
-	packet[20] = highByte(sp - sp_avg);
-	packet[21] = lowByte(sp - sp_avg);
-	packet[22] = highByte(sq - sq_avg);
-	packet[23] = lowByte(sq - sq_avg);
+    packet[20] = highByte(sp-sp_avg); //COMMENT THIS OUT IN CASE OF USING P/Q_KALMAN
+    packet[21] = lowByte(sp-sp_avg);
+    packet[22] = highByte(sq_avg);
+    packet[23] = lowByte(sq_avg);
 	packet[24] = highByte(sr - sr_avg);
 	packet[25] = lowByte(sr - sr_avg);
 	packet[26] = highByte(sax - sax_avg);
@@ -677,7 +609,7 @@ void sendTelemetryPacket() {
 
 int main(void)
 {
-    bool connection_lost = false;
+    //bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -686,12 +618,11 @@ int main(void)
 	imu_init(true, 100);
 	baro_init();
 	spi_flash_init();
-	ble_init();
+	//ble_init();
 	initProtocol();
     initValues();
     //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
-
-  //long connection_start_time = get_time_us() + 2350000;
+    DMP = true;
 
 	long connection_start_time = get_time_us() + 2400000;
 
@@ -703,7 +634,7 @@ int main(void)
 
 	while (!demo_done)
 	{
-        connection_lost = false;
+        //connection_lost = false;
   		processPkt();
 
 		if (check_timer_flag()) //40 ms
@@ -717,12 +648,12 @@ int main(void)
             // if(!(bat_counter++ % 10)){
             //     sum_bat_volt /= 10;
                 if(bat_volt < 1000){
-                    state = Panic_Mode;
+                    //state = Panic_Mode;
                 }
             //     sum_bat_volt = 0;
             // }
 
-            //processRecMsg();
+            processRecMsg();
 
             if ((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
                 state = Panic_Mode;

@@ -123,8 +123,10 @@ void run_filters_and_control(enum states *state){
 
 		case Raw_Mode:
             //Control with filtered Data
-            pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(sq-sq_avg);
-            roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(sp-sp_avg);
+            pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(sq-sq_avg); //replace this by q_kalman???
+            roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(sp-sp_avg); //replace this by p_kalman????
+            // pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(q_kalman);
+            // roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(p_kalman);
             yaw = p * ((axis[2]>>3) - f_d.sr_filtered);
             lift = axis[3]*40;
 			break;
@@ -154,10 +156,14 @@ void run_filters_and_control(enum states *state){
 
 	if (*state != Panic_Mode){
 		if(axis[3] >= 10){
-			ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
-			ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
-			ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
-			ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
+			// ae[0] = sqrt((2*d*pitch + d*lift - b*yaw)/(4*b*d));  // A
+			// ae[1] = sqrt((b*yaw + d*lift - 2*d*roll)/(4*b*d));  // B
+			// ae[2] = sqrt((-2*d*pitch + d*lift - b*yaw)/(4*b*d)); // C
+			// ae[3] = sqrt((b*yaw + d*lift + 2*d*roll)/(4*b*d));  // D
+            ae[0] = sqrt_2((20*pitch + 10*lift - yaw)/(40));  // A
+            ae[1] = sqrt_2((yaw + 10*lift - 20*roll)/(40));  // B
+            ae[2] = sqrt_2((-20*pitch + 10*lift - yaw)/(40)); // C
+            ae[3] = sqrt_2((yaw + 10*lift + 20*roll)/(40));  // D
 
 			for (int i = 0; i < 4; i++){
 				//ae[i] = ae[i]*6; //Scaling Factor

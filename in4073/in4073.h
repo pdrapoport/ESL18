@@ -60,13 +60,6 @@ unsigned int p, p1, p2,b,d;
 bool no_failure;
 void run_filters_and_control();
 void initValues();
-<<<<<<<
-//uint32_t diff;
-=======
-int b, d, p, p1, p2;
->>>>>>>
-
-
 
 //Filters
 float x_1[3], y_1[3], x_2[3], y_2[3], x_3[3], y_3[3];

@@ -19,10 +19,14 @@ void write_packet_flash(){
         packet[1] = thirdByte(timestamp);
         packet[2] = secondByte(timestamp);
         packet[3] = lowByte(timestamp);
-        packet[4] = highByte(sp-sp_avg);
+        packet[4] = highByte(sp-sp_avg); //COMMENT THIS OUT
         packet[5] = lowByte(sp-sp_avg);
         packet[6] = highByte(sq-sq_avg);
         packet[7] = lowByte(sq-sq_avg);
+        // packet[4] = highByte(p_kalman);
+        // packet[5] = lowByte(p_kalman);
+        // packet[6] = highByte(q_kalman);
+        // packet[7] = lowByte(q_kalman);
         packet[8] = highByte(sr - sr_avg);
         packet[9] = lowByte(sr - sr_avg);
         packet[10] = highByte(f_d.sr_filtered);

@@ -9,12 +9,13 @@
 
 #define PC
 
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
-#include <string.h>
-#include <inttypes.h>
-#include <stdlib.h>
+#include <stdio.h> 
+#include <termios.h> 
+#include <unistd.h> 
+#include <string.h> 
+#include <inttypes.h> 
+#include <stdlib.h> 
+#include <errno.h>
 #include "msgprocess.h"
 
 #include "joystick.h"
@@ -27,30 +28,28 @@
  **------------------------------------------------------------
  */
 struct termios savetty;
+struct termios savetty;
 FILE *fp;  //printing to a file just to check the filters
 
-void    term_initio()
-{
-	struct termios tty;
+void term_initio() {
+    struct termios tty;
 
-	tcgetattr(0, &savetty);
-	tcgetattr(0, &tty);
+    tcgetattr(0, & savetty);
+    tcgetattr(0, & tty);
 
-	tty.c_lflag &= ~(ECHO|ECHONL|ICANON|IEXTEN);
-	tty.c_cc[VTIME] = 0;
-	tty.c_cc[VMIN] = 0;
+    tty.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN);
+    tty.c_cc[VTIME] = 0;
+    tty.c_cc[VMIN] = 0;
 
-	tcsetattr(0, TCSADRAIN, &tty);
+    tcsetattr(0, TCSADRAIN, & tty);
 }
 
-void    term_exitio()
-{
-	tcsetattr(0, TCSADRAIN, &savetty);
+void term_exitio() {
+    tcsetattr(0, TCSADRAIN, & savetty);
 }
 
-void    term_puts(char *s)
-{
-	fprintf(stderr, "char: %s\n",s);
+void term_puts(char * s) {
+    fprintf(stderr, "%s", s);
 }
 
 
@@ -60,23 +59,21 @@ void    term_putchar(char c)
 	fprintf(fp,"%c",c);  //printing to a file just to check the filters
 }
 
-int     term_getchar_nb()
-{
-	static unsigned char line [2];
+int term_getchar_nb() {
+    static unsigned char line[2];
 
-	if (read(0,line,1)) // note: destructive read
-		return (int) line[0];
+    if (read(0, line, 1)) // note: destructive read
+        return (int) line[0];
 
-	return -1;
+    return -1;
 }
 
-int     term_getchar()
-{
-	int c;
+int term_getchar() {
+    int c;
 
-	while ((c = term_getchar_nb()) == -1)
-		;
-	return c;
+    while ((c = term_getchar_nb()) == -1)
+    ;
+    return c;
 }
 
 /*------------------------------------------------------------
@@ -85,18 +82,18 @@ int     term_getchar()
  * 115,200 baud
  **------------------------------------------------------------
  */
-#include <termios.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <assert.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+
+#include <termios.h> 
+#include <ctype.h> 
+#include <fcntl.h> 
+#include <unistd.h> 
+#include <stdio.h> 
+#include <assert.h> 
+#include <time.h> 
+#include <sys/types.h> 
+#include <sys/stat.h> 
 #include <sys/select.h>
 
-int serial_device = 0;
 int fd_RS232, fd_js;
 fd_set set;
 struct js_event js;
@@ -104,57 +101,54 @@ struct js_event js;
 int axis[6];
 struct timeval timeout;
 
-void rs232_open(void)
-{
-	char            *name;
-	int result;
-	struct termios tty;
+void rs232_open(void) {
+    char * name;
+    int result;
+    struct termios tty;
 
 	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
 	assert(fd_RS232>=0);
 
-	result = isatty(fd_RS232);
-	assert(result == 1);
+    result = isatty(fd_RS232);
+    assert(result == 1);
 
-	name = ttyname(fd_RS232);
-	assert(name != 0);
+    name = ttyname(fd_RS232);
+    assert(name != 0);
 
-	result = tcgetattr(fd_RS232, &tty);
-	assert(result == 0);
+    result = tcgetattr(fd_RS232, & tty);
+    assert(result == 0);
 
-	tty.c_iflag = IGNBRK; /* ignore break condition */
-	tty.c_oflag = 0;
-	tty.c_lflag = 0;
+    tty.c_iflag = IGNBRK; /* ignore break condition */
+    tty.c_oflag = 0;
+    tty.c_lflag = 0;
 
-	tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; /* 8 bits-per-character */
-	tty.c_cflag |= CLOCAL | CREAD; /* Ignore model status + read input */
+    tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; /* 8 bits-per-character */
+    tty.c_cflag |= CLOCAL | CREAD; /* Ignore model status + read input */
 
-	cfsetospeed(&tty, B115200);
-	cfsetispeed(&tty, B115200);
+    cfsetospeed( & tty, B115200);
+    cfsetispeed( & tty, B115200);
 
-	tty.c_cc[VMIN]  = 0;
-	tty.c_cc[VTIME] = 0; // added timeout //0 for NON-BLOCKING MODE but a lot of keys are missed by the protocol
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 0; // added timeout //0 for NON-BLOCKING MODE but a lot of keys are missed by the protocol
 
-	tty.c_iflag &= ~(IXON|IXOFF|IXANY);
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
 
-	result = tcsetattr (fd_RS232, TCSANOW, &tty); /* non-canonical */
+    result = tcsetattr(fd_RS232, TCSANOW, & tty); /* non-canonical */
 
-	tcflush(fd_RS232, TCIOFLUSH); /* flush I/O buffer */
+    tcflush(fd_RS232, TCIOFLUSH); /* flush I/O buffer */
 
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 10000;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 10000;
 
-	FD_ZERO(&set);
-	FD_SET(fd_RS232, &set);
+    FD_ZERO( & set);
+    FD_SET(fd_RS232, & set);
 }
 
+void rs232_close(void) {
+    int result;
 
-void    rs232_close(void)
-{
-	int result;
-
-	result = close(fd_RS232);
-	assert (result==0);
+    result = close(fd_RS232);
+    assert(result == 0);
 }
 
 
@@ -183,108 +177,111 @@ int rs232_getchar_nb()
 	}
 }
 
+int rs232_getchar() {
+    int c;
 
-int     rs232_getchar()
-{
-	int c;
-
-	while ((c = rs232_getchar_nb()) == -1)
-		;
-	return c;
+    while ((c = rs232_getchar_nb()) == -1);
+    return c;
 }
 
+int rs232_putchar(char c) {
+    int result;
 
-int     rs232_putchar(char c)
-{
-	int result;
+    do {
+        result = (int) write(fd_RS232, & c, 1);
+    } while (result == 0);
 
-	do {
-		result = (int) write(fd_RS232, &c, 1);
-	} while (result == 0);
-
-	assert(result == 1);
-	return result;
+    assert(result == 1);
+    return result;
 }
 
-void js_open(){
-	term_puts("\nConnecting joystick...\n");
-	fd_js = open(JS_DEV, O_RDONLY);
-	//fd_js = open(JS_DEV_RES, O_RDONLY);
-	//assert(fd_js >= 0);
-	fcntl(fd_js, F_SETFL, O_NONBLOCK);
-	//FD_SET(fd_js, &set);
-	term_puts("JS Connected\n");
+void js_open() {
+    term_puts("\nConnecting joystick...\n");
+    fd_js = open(JS_DEV, O_RDONLY);
+    // fd_js = open(JS_DEV_RES, O_RDONLY);
+    assert(fd_js >= 0);
+
+    fcntl(fd_js, F_SETFL, O_NONBLOCK);
+    term_puts("Joystick connected\n");
 }
 
-int pc2drone(uint8_t *msg){
-	int result;
-	int msglen = cmd2len(msg[1]);
-	//fprintf(stderr,"msglen: %d\n",msglen);
-	do {
-		result = (int) write(fd_RS232, msg, msglen);
-	} while (result == 0);
+int pc2drone(uint8_t * msg) {
+    int result;
+    int msglen = cmd2len(msg[1]);
+    do {
+        result = (int) write(fd_RS232, msg, msglen);
+    } while (result == 0);
 
-	assert(result == msglen);
-	return result;
+    assert(result == msglen);
+    return result;
 }
 
-void process_joystick(uint8_t but){
-	uint8_t msg[PWKBLEN - ADDBYTES];
-	uint8_t *payload;
-	switch(but) {
-	case 0:
-		msg[0] = '1';
-		break;
-	case 1:
-		msg[0] = '0';
-		break;
-	case 2:
-		msg[0] = '3';
-		break;
-	case 6:
-		msg[0] = '2';
-		break;
-	case 7:
-		msg[0] = '4';
-		break;
-	case 8:
-		msg[0] = '5';
-		break;
-	case 9:
-		msg[0] = '6';
-		break;
-	case 10:
-		msg[0] = '7';
-		break;
-	case 11:
-		msg[0] = '8';
-		break;
-	}
-	payload = makePayload(PWKB, msg);
-	pc2drone(payload);
-	free(payload);
+void process_joystick(uint8_t but) {
+    uint8_t msg[PWKBLEN - ADDBYTES];
+    uint8_t * payload;
+    switch (but) {
+        //Panic mode
+		case 0:
+			msg[0] = '1';
+			break;
+		//Safe mode
+		case 1:
+			msg[0] = '0';
+			break;
+		//Calibration mode
+		case 2:
+			msg[0] = '3';
+			break;
+		//Manual mode
+		case 6:
+			msg[0] = '2';
+			break;
+		//Yaw control mode
+		case 7:
+			msg[0] = '4';
+			break;
+		//Full control mode
+		case 8:
+			msg[0] = '5';
+			break;
+		//Raw mode
+		case 9:
+			msg[0] = '6';
+			break;
+		//Height control mode
+		case 10:
+			msg[0] = '7';
+			break;
+		//Wireless mode
+		case 11:
+			msg[0] = '8';
+			break;
+    }
+    payload = makePayload(PWKB, msg);
+    pc2drone(payload);
+    free(payload);
 }
 
-void process_key(uint8_t c)
-{
-	uint8_t msg[PWMOVLEN - ADDBYTES];
-	msg[0] = (char)c;
-	uint8_t *payload;
-	//fprintf(stderr,"%04x\n",msg[0]);
-	switch(msg[0]) {
-	//motor control
-	case 'd':         //motor 0 up
-	case 'c':         //motor 0 down
-	case 'f':         //motor 1 up
-	case 'v':         //motor 1 down
-	case 'g':         //motor 2 up
-	case 'b':         //motor 2 down
-	case 'h':         //motor 3 up
-	case 'n':         //motor 4 down
-	case 'm':         //b constant up
-	case ',':         //b constant down
-	case '.':         //d constant up
-	case '/':         //d constant down
+void process_key(uint8_t c) {
+    uint8_t msg[PWMOVLEN - ADDBYTES];
+    msg[0] = (char) c;
+    uint8_t * payload;
+    //fprintf(stderr,"%04x\n",msg[0]);
+
+    switch (msg[0]) {
+        //motor control
+		case 'd': //motor 0 up
+		case 'c': //motor 0 down
+		case 'f': //motor 1 up
+		case 'v': //motor 1 down
+		case 'g': //motor 2 up
+		case 'b': //motor 2 down
+		case 'h': //motor 3 up
+		case 'n': //motor 4 down
+		case 'm': //b constant up
+		case ',': //b constant down
+		case '.': //d constant up
+		case '/': //d constant down
 
 	//lift, roll, pitch, yaw control
 	case 'a':         //lift up
@@ -346,9 +343,36 @@ void process_key(uint8_t c)
 			msg[0] = 40;
 			break;
 
-		case 67:
-			//arrow right, roll down
-			msg[0] = 41;
+		//arrow and escape
+		case 27:
+			term_getchar_nb();
+			switch (term_getchar_nb()) {
+				case 65:
+					//arrow up, pitch down
+					msg[0] = 43;
+					break;
+
+				case 66:
+					//arrow down, pitch up
+					msg[0] = 95;
+					break;
+
+				case 68:
+					//arrow left, roll up
+					msg[0] = 40;
+					break;
+
+				case 67:
+					//arrow right, roll down
+					msg[0] = 41;
+					break;
+
+				default:
+					//escape, abort
+					msg[0] = 27;
+					break;
+			}
+			payload = makePayload(PWKB, msg);
 			break;
 
 		default:
@@ -365,72 +389,45 @@ void process_key(uint8_t c)
 		break;
 	}
 
-	pc2drone(payload);
-	free(payload);
-	//fprintf(stderr,"sent %c\n",msg[0]);
+    pc2drone(payload);
+    free(payload);
+    //fprintf(stderr,"sent %c\n",msg[0]);
 }
 
-void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw){
-	uint8_t *payload;
-	uint8_t msg[PWMOVLEN - ADDBYTES];
-	msg[0] = highByte(lift);
-	msg[1] = lowByte(lift);
-	msg[2] = highByte(roll);
-	msg[3] = lowByte(roll);
-	msg[4] = highByte(pitch);
-	msg[5] = lowByte(pitch);
-	msg[6] = highByte(yaw);
-	msg[7] = lowByte(yaw);
+void sendLRPY(int16_t lift, int16_t roll, int16_t pitch, int16_t yaw) {
+    uint8_t * payload;
+    uint8_t msg[PWMOVLEN - ADDBYTES];
+    msg[0] = highByte(lift);
+    msg[1] = lowByte(lift);
+    msg[2] = highByte(roll);
+    msg[3] = lowByte(roll);
+    msg[4] = highByte(pitch);
+    msg[5] = lowByte(pitch);
+    msg[6] = highByte(yaw);
+    msg[7] = lowByte(yaw);
 
-	payload = makePayload(PWMOV, msg);
-	pc2drone(payload);
-	free(payload);
+    payload = makePayload(PWMOV, msg);
+    pc2drone(payload);
+    free(payload);
 }
 
 bool checkJoystick() {
-    // static int i =0;
-    // FD_SET(fd_js,&set);
-    // select(fd_js + 1, &set,NULL,NULL,&timeout);
-    // if(FD_ISSET(fd_js,&set)) {
-    //     if (read(fd_js,&js,sizeof(struct js_event)) ==
-    //             sizeof(struct js_event))  {
-    //         switch(js.type & ~JS_EVENT_INIT) {
-    //         case JS_EVENT_BUTTON:
-    //             button[js.number] = js.value;
-    //             //printf("but %d: %d\n",js.number,js.value);
-    //             //if(button[js.number] == 1) process_joystick(js.number);
-    //             break;
-    //         case JS_EVENT_AXIS:
-    //             axis[js.number] = js.value;
-    //             //printf("axis %d: %d\n",js.number,js.value);
-    //             break;
-    //         }
-    //         i = 0;
+    while (read(fd_js,&js,sizeof(struct js_event)) == sizeof(struct js_event))  {
+		switch(js.type & ~JS_EVENT_INIT) {
+			case JS_EVENT_BUTTON:
+				//fprintf(stderr,"but %d: %d\n",js.number,js.value);
+				if(js.value == 1) process_joystick(js.number);
+				break;
+			case JS_EVENT_AXIS:
+				axis[js.number] = js.value;
+				//printf("axis %d: %d\n",js.number,js.value);
+				break;
+			}
+	}
 
-    //         //if (errno != EAGAIN) {
-    //         //	perror("\njs: error reading (EAGAIN)");
-    //         //	exit (1);
-    //         //}
-    //     }
-    //     i++;
-    // }
-    // if(i>2) {
-    //     //fprintf(stderr,"\n Joystick Disconnected\n");
-    //     return false;
-    // }
-        while (read(fd_js,&js,sizeof(struct js_event)) ==
-                sizeof(struct js_event))  {
-            switch(js.type & ~JS_EVENT_INIT) {
-            case JS_EVENT_BUTTON:
-                //printf("but %d: %d\n",js.number,js.value);
-                if(js.value == 1) process_joystick(js.number);
-                break;
-            case JS_EVENT_AXIS:
-                axis[js.number] = js.value;
-                //printf("axis %d: %d\n",js.number,js.value);
-                break;
-            }
-}
+	if(errno != EAGAIN)
+		return false;
+	return true;
 }
 
 void printTelemetry(uint8_t *msg) {
@@ -449,7 +446,6 @@ void printTelemetry(uint8_t *msg) {
 	fprintf(stderr, " %4d |", combineByte(msg[32], msg[33]));
 	fprintf(stderr, " %5d | %7d\n", combine32Byte(msg[34], msg[35], msg[36], msg[37]),
 									combine32Byte(msg[38], msg[39], msg[40], msg[41]));
-    return true;
 }
 
 void processRecMsg(){
@@ -575,8 +571,7 @@ int main(int argc, char **argv)
 	long long diff;
 	bool exit = false;
 	bool js_conn = true;
-	bool esc = false;
-	// bool prev_js_conn = true;
+	bool prev_js_conn = true;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
@@ -586,32 +581,13 @@ int main(int argc, char **argv)
 
 	term_initio();
 	rs232_open();
-	//js_open();
+	js_open();
 
 	term_puts("Type ^C to exit\n");
 	initProtocol();
 
-	term_puts("\nConnecting joystick...\n");
-
-
-	//if ((js_fd = open(JS_DEV_RES, O_RDONLY)) < 0) {
-	if ((fd_js = open(JS_DEV, O_RDONLY)) < 0) {
-		term_puts("\nFailed to connect joystick\n");
-		//exit(1);
-	}
 	gettimeofday(&tm1, NULL);
-	fcntl(fd_js, F_SETFL, O_NONBLOCK);
 
-
-
-	/* discard any incoming text
-	 */
-	//while ((c = rs232_getchar_nb()) != -1)
-	//fputc(c,stderr);
-
-	/* send & receive
-	 */
-	 int counter = 0;
 	for (;;)
 	{
 		if ((c = term_getchar_nb()) != -1){
@@ -626,20 +602,15 @@ int main(int argc, char **argv)
 		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			checkJoystick();
-			//if(js_conn && prev_js_conn)
-            //axis[3] = 32767;
-			sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16383);
-			// else if(!js_conn && prev_js_conn){
-			// 	//send panic mode message
-			// 	process_key(49);
-			// 	prev_js_conn = false;
-			// }
-			//printf()			// for (int i = 0; i < 4; ++i) {
-			//      axis[i]++;
-			// }
-			//if ((c = term_getchar_nb()) != -1)
-			//	rs232_putchar(c);
+			js_conn = checkJoystick();
+			if(js_conn && prev_js_conn)
+				sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
+			else if(!js_conn && prev_js_conn){
+				//send panic mode message
+				process_key(49);
+				//fprintf(stderr,"JS Connection Broke!\n");
+				prev_js_conn = false;
+			}
 
 		}
 

@@ -20,29 +20,31 @@
 enum states state;
 
 void initValues(){
-	b = 1;
-	d = 10;
-	p = 1000;
-	p1 = 50;
-	p2 = 110;
+  b = 1;
+  d = 10;
+  p = 1610;
+  p1 = 50;
+  p2 = 110;
 	flash_full = false;
 	read_completed = false;
 	start_logging = false;
-	demo_done = false;
-	state = Safe_Mode;
-	sp_avg = 0;
-	sq_avg = 0;
-	sr_avg = 0;
-	sax_avg = 0;
-	say_avg = 0;
-	saz_avg = 0;
-	motors_off = true;
-	calibration_done = false;
-	no_failure = true;
-	last_rec_pkt = get_time_us();
 
-	for (int i = 0; i<4; i++)
-		axis_offset[i] = 0;
+    demo_done = false;
+    state = Safe_Mode;
+    sp_avg = 0;
+    sq_avg = 0;
+    sr_avg = 0;
+    sax_avg = 0;
+    say_avg = 0;
+    saz_avg = 0;
+    motors_off = true;
+    calibration_done = false;
+    no_failure = true;
+    last_rec_pkt = get_time_us();
+    connection_lost = false;
+
+    for (int i = 0; i < 4; i++)
+        axis_offset[i] = 0;
 }
 
 /*------------------------------------------------------------------
@@ -50,26 +52,27 @@ void initValues(){
  *****------------------------------------------------------------------
  */
 
+
 bool checkJS(){
 	//return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
 	return false;
 }
 
-bool checkMotor(){
-	return (ae[0] || ae[1] || ae[2] || ae[3]);
+bool checkMotor() {
+    return (ae[0] || ae[1] || ae[2] || ae[3]);
 }
 
-void step(enum states *state, int c) {
-	switch (*state) {
-	// SAFE MODE
-	case Safe_Mode:
-		no_failure = true;
-		switch (c) {
-		case '2':
-			if (!checkMotor() && !checkJS() && no_failure) {
-				*state = Manual_Mode;
-			}
-			break;
+void step(enum states * state, int c) {
+    switch ( * state) {
+        // SAFE MODE
+        case Safe_Mode:
+            no_failure = true;
+            switch (c){
+                case '2':
+                    if (!checkMotor() && !checkJS() && no_failure){
+                        *state = Manual_Mode;
+                    }
+                    break;
 
 		case '3':
 			if (!checkMotor() && !checkJS() && no_failure) {
@@ -209,80 +212,79 @@ void step(enum states *state, int c) {
 		}
 		break;
 
-	case Panic_Mode:
-		nrf_gpio_pin_toggle(RED);
-		if (c == '0' && !checkMotor() && ((bat_volt > 1110) || (bat_volt < 650)))
-			*state = Safe_Mode;
-		break;
+        case Panic_Mode:
+            nrf_gpio_pin_toggle(RED);
+            if (c == '0' && !checkMotor() && ((bat_volt > 1000) || (bat_volt < 650)))
+                * state = Safe_Mode;
+            break;
 
-	case Calibration_Mode:
-		break;
-	}
+        case Calibration_Mode:
+            break;
+    }
 }
 
-void apply_offset_js_axis(){
-	int32_t temp;
-	for(int i = 0; i<4; i++) {
-		temp = axis[i]+axis_offset[i];
-		if (temp < -32767)
-			axis[i] = -32767;
-		else if (temp>32767)
-			axis[i] = 32767;
-		else
-			axis[i] = temp;
-	}
+void apply_offset_js_axis() {
+    int32_t temp;
+    for (int i = 0; i < 4; i++) {
+        temp = axis[i] + axis_offset[i];
+        if (temp < -32767)
+            axis[i] = -32767;
+        else if (temp > 32767)
+            axis[i] = 32767;
+        else
+            axis[i] = temp;
+    }
 }
 
 /*------------------------------------------------------------------
  * process_key -- process command keys
  *****------------------------------------------------------------------
  */
-void process_key(uint8_t c){
-	switch (c)
-	{
-	//motor control
-	case 'd':
-		ae[0] += 10;
-		break;
-	case 'c':
-		ae[0] -= 10;
-		if (ae[0] < 0) ae[0] = 0;
-		break;
-	case 'f':
-		ae[1] += 10;
-		break;
-	case 'v':
-		ae[1] -= 10;
-		if (ae[1] < 0) ae[1] = 0;
-		break;
-	case 'g':
-		ae[2] += 10;
-		break;
-	case 'b':
-		ae[2] -= 10;
-		if (ae[2] < 0) ae[2] = 0;
-		break;
-	case 'h':
-		ae[3] += 10;
-		break;
-	case 'n':
-		ae[3] -= 10;
-		if (ae[3] < 0) ae[3] = 0;
-		break;
-	case 'm':
-		//d++;
-		break;
-	case ',':
-		//d--;
-		//if(d < 1) d = 1;
-		break;
-	case '.':
-		//b++;
-		break;
-	case '/':
-		//b--;
-		//if(b < 1) b = 1;
-		break;
+void process_key(uint8_t c) {
+    switch (c) {
+        //motor control
+        case 'd':
+            ae[0] += 10;
+            break;
+        case 'c':
+            ae[0] -= 10;
+            if (ae[0] < 0) ae[0] = 0;
+            break;
+        case 'f':
+            ae[1] += 10;
+            break;
+        case 'v':
+            ae[1] -= 10;
+            if (ae[1] < 0) ae[1] = 0;
+            break;
+        case 'g':
+            ae[2] += 10;
+            break;
+        case 'b':
+            ae[2] -= 10;
+            if (ae[2] < 0) ae[2] = 0;
+            break;
+        case 'h':
+            ae[3] += 10;
+            break;
+        case 'n':
+            ae[3] -= 10;
+            if (ae[3] < 0) ae[3] = 0;
+            break;
+        case 'm':
+            d++;
+            break;
+        case ',':
+            d--;
+            if (d < 1) d = 1;
+            break;
+        case '.':
+            b++;
+            break;
+        case '/':
+            b--;
+            if (b < 1) b = 1;
+            break;
 
 	//lift, roll, pitch, yaw control
 	case 'a':
@@ -473,6 +475,81 @@ void processPkt() {
 	}
 }
 
+ // Author: Vincent Bejach
+ /* Implement the FSM defined for the communication protocol.
+  * Reads from the global variable recChar, and remove part of its content when a packet is done being processed or when some bytes are thrown away.
+  * Outputs the message of the packet being processed in the global receivedMsg array. The fnished processing is indicated by the flag messageComplete being set to true.
+  */
+ void processPkt() {
+  receivePkt();
+  while (readIndex < buffCount) {
+    switch (packState) {
+      case wait:
+        //printf("\nWAIT!\n");
+        //printf("READ %02X\n", recChar[readIndex]);
+        if (recChar[readIndex] == STARTBYTE) {
+          //printf("START\n");
+          ++readIndex;
+          packState = first_byte_received;
+        }
+        else {
+          slideMsg(1);
+        }
+        break;
+      case first_byte_received:
+        msglen = cmd2len(recChar[readIndex++]);
+        packState = receiveMsg;
+        if (msglen == 0) {
+          slideMsg(1);
+          packState = wait;
+        }
+        //printf("\nFIRST!\n");
+        break;
+      case receiveMsg:
+        if (readIndex < msglen - 1) {
+          ++readIndex;
+        }
+        else {
+          packState = CRC_Check;
+        }
+        //printf("\nRECV\n");
+        break;
+      case CRC_Check:
+        if (checkCRC(recChar, msglen)) {
+          receivedMsg[++recBuff] = getPayload(msglen);
+          //printf("\nRECEIVED MESSAGE: ");
+          // for (int k = 0; k < msglen; ++k) {
+          //     printf("%02X ", recChar[k]);
+          // }
+          // printf("\n");
+          processRecMsg();
+          // if (buffCount > 13) {
+          //     printf("oldStartByte: %02X\n", recChar[13]);
+          // }
+          // printf("%d/%d -> ", readIndex, buffCount);
+          slideMsg(msglen);
+          // printf("%d/%d\n", readIndex, buffCount);
+          // if (buffCount > 0) {
+          //     printf("currentStartByte: %02X\n", recChar[0]);
+          // }
+          packState = wait;
+        }
+        else {
+          //printf("\nCRC FAIL!\n");
+          slideMsg(1);
+          packState = wait;
+        }
+        // printf("\nCRC!\n");
+        break;
+      case panic:
+        //TODO: Fall on the floor and cry "AAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+        //panic_on = true;
+        break;
+      default:
+        packState = panic;
+    }
+}
+ }
 void processRecMsg(){
 	if(recBuff != 0) {
 		uint8_t idCmd = receivedMsg[1].idCmd;
@@ -600,7 +677,7 @@ void sendTelemetryPacket() {
 
 int main(void)
 {
-	//bool connection_lost = false;
+    bool connection_lost = false;
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -611,35 +688,49 @@ int main(void)
 	spi_flash_init();
 	ble_init();
 	initProtocol();
-	initValues();
-	uint32_t lts;
-    //uint32_t tm1 = 0, tm2 = 0;
-	//dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+    initValues();
+    //dmp_enable_gyro_cal(0); //Disables the calibration of the gyro data in the DMP
+
+  //long connection_start_time = get_time_us() + 2350000;
+
+	long connection_start_time = get_time_us() + 2400000;
+
+    uint32_t counter = 0;
+    // uint8_t bat_counter = 0;
+    // uint64_t sum_bat_volt = 0;
+    uint32_t lts = get_time_us();
 	uint8_t packet[20];
-	//bool connection_lost = false;
-	//long connection_start_time = get_time_us() + 2350000;
-	uint32_t counter = 0;
-	DMP = true;
-	//tm1 = get_time_us();
-	lts = get_time_us();
 
 	while (!demo_done)
 	{
-		//connection_lost = false;
-		//if (rx_queue.count) process_key( dequeue(&rx_queue) );
+        connection_lost = false;
+  		processPkt();
 
-		processPkt();
 		if (check_timer_flag()) //40 ms
 		{
 			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
-			adc_request_sample();
-			if (bat_volt < 500) {
-				//state = Panic_Mode;
-			}
-			read_baro();
-			processRecMsg();
+            adc_request_sample();
 
+            //Battery check function
+            // sum_bat_volt += bat_volt;
+            // if(!(bat_counter++ % 10)){
+            //     sum_bat_volt /= 10;
+                if(bat_volt < 1000){
+                    state = Panic_Mode;
+                }
+            //     sum_bat_volt = 0;
+            // }
+
+            //processRecMsg();
+
+            if ((get_time_us() > connection_start_time) && (get_time_us() - last_rec_pkt > 100000) && !connection_lost) {
+                state = Panic_Mode;
+                nrf_gpio_pin_toggle(YELLOW);
+                connection_lost = true;
+            }
+  			read_baro();
+  			//printf("read baro\n");
 			clear_timer_flag();
 		}
 

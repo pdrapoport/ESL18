@@ -60,7 +60,11 @@ unsigned int p, p1, p2,b,d;
 bool no_failure;
 void run_filters_and_control();
 void initValues();
+<<<<<<<
 //uint32_t diff;
+=======
+int b, d, p, p1, p2;
+>>>>>>>
 
 
 
@@ -121,7 +125,7 @@ void gpio_init(void);
 typedef struct {
 	uint8_t Data[QUEUE_SIZE];
 	uint16_t first,last;
-  	uint16_t count;
+  uint16_t count;
 } queue;
 void init_queue(queue *q);
 void enqueue(queue *q, char x);
@@ -189,5 +193,11 @@ void changeMode();
 void changeMov(uint8_t *msg);
 void changeKbParam(uint8_t *msg);
 void sendTelemetryPacket();
+
+// SAFETY
+bool connection_lost;
+bool motors_off; // Update according to the readings
+bool no_failure;
+bool checkMotor();
 
 #endif // IN4073_H__

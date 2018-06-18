@@ -189,7 +189,7 @@ void step(enum states * state, int c) {
 
         case Panic_Mode:
             nrf_gpio_pin_toggle(RED);
-            if (c == '0' && !checkMotor() && ((bat_volt > 1000) || (bat_volt < 650)))
+            if (c == '0' && !checkMotor() && ((bat_volt > 1050) || (bat_volt < 650)))
                 * state = Safe_Mode;
             break;
 
@@ -613,7 +613,7 @@ int main(void)
             sum_bat_volt += bat_volt;
             if(!(bat_counter++ % 8)){
                 sum_bat_volt = sum_bat_volt>>3;
-                if(sum_bat_volt < 550){
+                if(sum_bat_volt < 1050){
                     state = Panic_Mode;
                     sendErrMsg(4);
                 }

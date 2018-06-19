@@ -466,7 +466,7 @@ void processRecMsg(){
 				printErrMsg(msg);
 				break;
 			default:
-				printf("ERROR\n");
+				fprintf(stderr,"ERROR\n");
 				break;
 		}
 		slideRecMsg(1);

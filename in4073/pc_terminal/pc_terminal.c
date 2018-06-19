@@ -416,6 +416,17 @@ void printTelemetry(uint8_t *msg) {
 									combine32Byte(msg[38], msg[39], msg[40], msg[41]));
 }
 
+void printErrMsg(uint8_t *msg){
+	switch(msg[0]){
+		case 3:
+			fprintf(stderr,"\n C R C   E R R O R\n");
+			break;
+		case 4:
+			fprintf(stderr,"\nL O W   B A T T E R Y\n");
+			break;
+	}
+}
+
 void processRecMsg(){
 	if(recBuff != 0){
 		uint8_t idCmd = receivedMsg[1].idCmd;
@@ -423,7 +434,7 @@ void processRecMsg(){
 		uint8_t msg[MAXMSG];
 		int j = 0;
 		for(j= 0;j< msglen-ADDBYTES;j++){
-			//printf("%04x ",receivedMsg[i].msg[j]),
+			//fprintf(stderr,"%04x ",receivedMsg[1].msg[j])
 			msg[j] = receivedMsg[1].msg[j];
 		}
 
@@ -451,8 +462,11 @@ void processRecMsg(){
 			case DWTEL:
 				printTelemetry(msg);
 				break;
+			case DWERR:
+				printErrMsg(msg);
+				break;
 			default:
-				printf("ERROR\n");
+				fprintf(stderr,"ERROR\n");
 				break;
 		}
 		slideRecMsg(1);

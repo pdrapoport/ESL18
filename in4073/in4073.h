@@ -144,6 +144,7 @@ void changeMode();
 void changeMov(uint8_t *msg);
 void changeKbParam(uint8_t *msg);
 void sendTelemetryPacket();
+void sendErrMsg(uint8_t errNum);
 
 // SAFETY
 bool connection_lost;

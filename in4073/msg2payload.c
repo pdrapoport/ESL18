@@ -96,6 +96,9 @@ uint8_t cmd2len(uint8_t idCmd){
         case PWKB:
             msglen = PWKBLEN;
             break;
+        case DWERR:
+            msglen = DWERRLEN;
+            break;
         default:
             msglen = 0;
             break;

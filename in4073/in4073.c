@@ -327,6 +327,7 @@ void process_key(uint8_t c) {
                 axis_offset[1] -= 1000;
             break;
         case 27:
+			state = Panic_Mode;
             demo_done = true;
             break;
 
@@ -595,7 +596,7 @@ int main(void)
     uint32_t lts = get_time_us();
 
     //tm1 = get_time_us();
-	while (!demo_done)
+	while (!demo_done || !checkMotor())
 	{
         connection_lost = false;
   		processPkt();

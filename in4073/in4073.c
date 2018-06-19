@@ -596,7 +596,7 @@ int main(void)
     uint32_t lts = get_time_us();
 
     //tm1 = get_time_us();
-	while (!demo_done || !checkMotor())
+	while (!demo_done || !motors_off)
 	{
         connection_lost = false;
   		processPkt();
@@ -614,7 +614,7 @@ int main(void)
             sum_bat_volt += bat_volt;
             if(!(bat_counter++ % 8)){
                 sum_bat_volt = sum_bat_volt>>3;
-                if(sum_bat_volt < 1050){
+                if(sum_bat_volt < 550){
                     state = Panic_Mode;
                     sendErrMsg(4);
                 }

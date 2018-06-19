@@ -48,6 +48,7 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Calibration_Mode:
+			calibration_done = false;
 			sp_sum += sp;
 			sq_sum += sq;
 			sr_sum += sr;

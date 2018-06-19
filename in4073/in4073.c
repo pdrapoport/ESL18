@@ -308,23 +308,24 @@ void process_key(uint8_t c) {
             break;
         case 43:
             //pitch down
-            if (axis_offset[0] < 31767)
-                axis_offset[0] += 1000;
+            
+            if (axis_offset[1] > -31767)
+                axis_offset[1] -= 1000;
             break;
         case 95:
             //pitch up
-            if (axis_offset[0] > -31767)
-                axis_offset[0] -= 1000;
-            break;
-        case 40:
-            //roll up
             if (axis_offset[1] < 31767)
                 axis_offset[1] += 1000;
             break;
+        case 40:
+            //roll up
+            if (axis_offset[0] > -31767)
+                axis_offset[0] -= 1000;
+            break;
         case 41:
             //roll down
-            if (axis_offset[1] > -31767)
-                axis_offset[1] -= 1000;
+            if (axis_offset[0] < 31767)
+                axis_offset[0] += 1000;
             break;
         case 27:
 			state = Panic_Mode;

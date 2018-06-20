@@ -52,15 +52,57 @@ int16_t axis[4];
 int16_t sp_avg, sq_avg, sr_avg;
 int16_t sax_avg, say_avg, saz_avg;
 int16_t phi_avg, theta_avg, psi_avg;
+bool DMP;
+
 bool calibration_done; // Update after the calibration is done
+bool motors_off; // Update according to the readings
+unsigned int p, p1, p2,b,d;
+bool no_failure;
 void run_filters_and_control();
 void initValues();
-int b, d, p, p1, p2;
 
+//Filters
+float x_1[3], y_1[3], x_2[3], y_2[3], x_3[3], y_3[3];
+float p_sensor[2], p_bias[2], q_sensor[2], q_bias[2];
+// int bb[3];
+// int a[3];
+int x0, x1, x2, yy1, yy2;
+//unsigned int p2phi;
+//unsigned int C1,C2;
+int p_kalman, phi_kalman, phi_error;
+int q_kalman, theta_kalman, theta_error;
+void initialize_butterworth();
+void initialize_kalman();
 
+enum filters {
+    // say_butterworth,
+    // sax_butterworth,
+    sr_butterworth,
+    kalman_phi,
+    kalman_theta
+} filter;
+
+struct filtered_data {
+    //int16_t say_filtered;
+    int16_t phi_kalman;
+    //int16_t sax_filtered;
+    int16_t theta_kalman;
+    int16_t sr_filtered;
+} f_d;
+
+int16_t butterworth_filter(int16_t raw_data, enum filters *filter);
+int16_t kalman_filter(int16_t filtered, int16_t vel_read, enum filters *filter);
+
+//Logging
+bool flash_full;
+bool read_completed;
+bool start_logging;
+void write_packet_flash();
+void read_packet_flash(uint8_t * packet);
+void print_to_terminal(uint8_t * packet);
 
 // Timers
-#define TIMER_PERIOD	25 //50ms=20Hz (MAX 23bit, 4.6h)
+#define TIMER_PERIOD	50 //50ms=20Hz (MAX 23bit, 4.6h)
 void timers_init(void);
 uint32_t get_time_us(void);
 bool check_timer_flag(void);

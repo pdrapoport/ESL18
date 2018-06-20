@@ -4,17 +4,17 @@
  * Arjan J.C. van Gemund (+ mods by Ioannis Protonotarios)
  *
  * read more: http://mirror.datenwolf.net/serial/
- *------------------------------------------------------------
+ **------------------------------------------------------------
  */
 
 #define PC
 
-#include <stdio.h> 
-#include <termios.h> 
-#include <unistd.h> 
-#include <string.h> 
-#include <inttypes.h> 
-#include <stdlib.h> 
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <string.h>
+#include <inttypes.h>
+#include <stdlib.h>
 #include <errno.h>
 #include "msgprocess.h"
 
@@ -25,9 +25,11 @@
 
 /*------------------------------------------------------------
  * console I/O
- *------------------------------------------------------------
+ **------------------------------------------------------------
  */
 struct termios savetty;
+struct termios savetty;
+FILE *fp;  //printing to a file just to check the filters
 
 void term_initio() {
     struct termios tty;
@@ -50,8 +52,11 @@ void term_puts(char * s) {
     fprintf(stderr, "%s", s);
 }
 
-void term_putchar(char c) {
-    putc(c, stderr);
+
+void    term_putchar(char c)
+{
+	putc(c,stderr);
+	fprintf(fp,"%c",c);  //printing to a file just to check the filters
 }
 
 int term_getchar_nb() {
@@ -75,18 +80,18 @@ int term_getchar() {
  * Serial I/O
  * 8 bits, 1 stopbit, no parity,
  * 115,200 baud
- *------------------------------------------------------------
+ **------------------------------------------------------------
  */
 
-#include <termios.h> 
-#include <ctype.h> 
-#include <fcntl.h> 
-#include <unistd.h> 
-#include <stdio.h> 
-#include <assert.h> 
-#include <time.h> 
-#include <sys/types.h> 
-#include <sys/stat.h> 
+#include <termios.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <assert.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/select.h>
 
 int fd_RS232, fd_js;
@@ -101,7 +106,7 @@ void rs232_open(void) {
     int result;
     struct termios tty;
 
-       	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);  // Hardcode your serial port here, or request it as an argument at runtime
+	fd_RS232 = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
 	assert(fd_RS232>=0);
 
     result = isatty(fd_RS232);
@@ -148,10 +153,10 @@ void rs232_close(void) {
 
 
 
-int	rs232_getchar_nb()
+int rs232_getchar_nb()
 {
-	int 		result;
-	unsigned char 	c;
+	int result;
+	unsigned char c;
 
 	int rv = select(fd_RS232 + 1, &set, &set, &set, &timeout);
 	if (rv == -1) {
@@ -278,45 +283,64 @@ void process_key(uint8_t c) {
 		case '.': //d constant up
 		case '/': //d constant down
 
-		//lift, roll, pitch, yaw control
-		case 'a': //lift up
-		case 'z': //lift down
-		case 'q': //yaw down
-		case 'w': //yaw up
-		case 'u': //yaw control p up
-		case 'j': //yaw control p down
-		case 'i': //roll, pitch control p1 up
-		case 'k': //roll, pitch control p1 down
-		case 'o': //roll, pitch control p2 up
-		case 'l': //roll, pitch control p2 down
-			payload = makePayload(PWKB, msg);
+	//lift, roll, pitch, yaw control
+	case 'a':         //lift up
+	case 'z':         //lift down
+	case 'q':         //yaw down
+	case 'w':         //yaw up
+	case 'u':         //yaw control p up
+	case 'j':         //yaw control p down
+	case 'i':         //roll, pitch control p1 up
+	case 'k':         //roll, pitch control p1 down
+	case 'o':         //roll, pitch control p2 up
+	case 'l':         //roll, pitch control p2 down
+		payload = makePayload(PWKB, msg);
+		break;
+
+	//mode
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case 'p':
+		payload = makePayload(PWMODE, msg);
+		break;
+
+	//test case
+	case 'y':
+		msg[0] = 0x01;
+		msg[1] = 0x56;
+		msg[2] = 0x00;
+		msg[3] = 0x2C;
+		msg[4] = 0x01;
+		msg[5] = 0x4D;
+		msg[6] = 0x00;
+		msg[7] = 0x16;
+		payload = makePayload(PWMOV, msg);
+		break;
+
+	//arrow and escape
+	case 27:
+		term_getchar_nb();
+		switch(term_getchar_nb()) {
+		case 65:
+			//arrow up, pitch down
+			msg[0] = 43;
 			break;
 
-		//mode
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case 'p':
-			payload = makePayload(PWMODE, msg);
+		case 66:
+			//arrow down, pitch up
+			msg[0] = 95;
 			break;
 
-		//test case
-		case 'y':
-			msg[0] = 0x01;
-			msg[1] = 0x56;
-			msg[2] = 0x00;
-			msg[3] = 0x2C;
-			msg[4] = 0x01;
-			msg[5] = 0x4D;
-			msg[6] = 0x00;
-			msg[7] = 0x16;
-			payload = makePayload(PWMOV, msg);
+		case 68:
+			//arrow left, roll up
+			msg[0] = 40;
 			break;
 
 		//arrow and escape
@@ -352,10 +376,18 @@ void process_key(uint8_t c) {
 			break;
 
 		default:
-			msg[0] = '/';
-			payload = makePayload(PWKB, msg);
+			//escape, abort
+			msg[0] = 27;
 			break;
-    }
+		}
+		payload = makePayload(PWKB, msg);
+		break;
+
+	default:
+		msg[0] = '/';
+		payload = makePayload(PWKB, msg);
+		break;
+	}
 
     pc2drone(payload);
     free(payload);
@@ -543,7 +575,7 @@ void processPkt() {
 
 /*----------------------------------------------------------------
  * main -- execute terminal
- *----------------------------------------------------------------
+ **----------------------------------------------------------------
  */
 
 int main(int argc, char **argv)
@@ -552,13 +584,14 @@ int main(int argc, char **argv)
 	struct timeval	tm1, tm2;
 	long long diff;
 	bool exit = false;
+	bool esc = false;
 	bool js_conn = true;
 	bool prev_js_conn = true;
 
 	for (int i = 0; i < 4; ++i) {
 		axis[i] = 0;
 	}
-
+	fp = fopen("file.txt","w");
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
 
 	term_initio();
@@ -576,13 +609,16 @@ int main(int argc, char **argv)
 			process_key(c);
 			if (c == 'e')
 				exit = true;
+			if (c == 27)
+				esc = true;
 		}
 		gettimeofday(&tm2, NULL);
 		diff = 1000 * (tm2.tv_sec - tm1.tv_sec) + (tm2.tv_usec - tm1.tv_usec) / 1000;
 		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			js_conn = checkJoystick();
+
+            js_conn = checkJoystick();
 			if(js_conn && prev_js_conn)
 				sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
 			else if(!js_conn && prev_js_conn){
@@ -595,9 +631,13 @@ int main(int argc, char **argv)
 		}
 
 		if ((c = rs232_getchar_nb()) != -1) {
+			if (!esc){
 			recChar[buffCount] = (uint8_t)c;
 			++buffCount;
 			processPkt();
+		}
+		else
+			term_putchar(c);
 		}
 		if (exit)
 			break;

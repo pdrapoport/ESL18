@@ -596,14 +596,14 @@ void sendTelemetryPacket() {
     packet[31] = lowByte(saz - saz_avg);
     packet[32] = highByte(bat_volt);
     packet[33] = lowByte(bat_volt);
-    packet[34] = fourthByte(0);
-    packet[35] = thirdByte(0);
-    packet[36] = highByte(p1);
-    packet[37] = lowByte(p1);
-    packet[38] = fourthByte(0);
-    packet[39] = thirdByte(0);
-    packet[40] = highByte(p2);
-    packet[41] = lowByte(p2);
+    packet[34] = fourthByte(temperature);
+    packet[35] = thirdByte(temperature);
+    packet[36] = highByte(temperature);
+    packet[37] = lowByte(temperature);
+    packet[38] = fourthByte(pressure);
+    packet[39] = thirdByte(pressure);
+    packet[40] = highByte(pressure);
+    packet[41] = lowByte(pressure);
     uint8_t *msg = makePayload(DWTEL, packet);
     for(int i = 0; i < 48; ++i) {
         uart_put(msg[i]);

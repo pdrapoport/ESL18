@@ -3,7 +3,7 @@
 
 /*------------------------------------------------------------------
  *  msg2payload.h -- Wrapper for communication protocol
- * 
+ *
  * 	Group 7:
  *  - Pavel Rapoport
  * 	- Antonio Rueda
@@ -13,7 +13,7 @@
  * 	TU Delft
  *
  *  June 2018
- * 
+ *
  *****------------------------------------------------------------------
  */
 
@@ -39,13 +39,13 @@
 #define DWERR  0x26    //Drone2PC Write Error Code
 
 //Length per CMD (in bytes)
-#define PWMODELEN  6
-#define PWMOVLEN   13
-#define DWTELLEN   48
-#define PWKBLEN    6
-#define DWERRLEN   6
+#define PWMODELEN  5
+#define PWMOVLEN   12
+#define DWTELLEN   47
+#define PWKBLEN    5
+#define DWERRLEN   5
 
-#define ADDBYTES     5    //Additional bytes besides the original message
+#define ADDBYTES     4    //Additional bytes besides the original message
 #define MAXMSG       50
 #define MAXPLDSIZE   10 // Maximum payload size (50 is actually too big, but it gies room for future protocol extensions)
 #define MINBUFFCOUNT 6 //Minimum buffCount to start processing message

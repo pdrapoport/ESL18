@@ -567,8 +567,8 @@ void sendTelemetryPacket() {
         packet[17] = lowByte(theta - theta_avg);
         packet[20] = highByte(sp-sp_avg);
         packet[21] = lowByte(sp-sp_avg);
-        packet[22] = highByte(sq_avg);
-        packet[23] = lowByte(sq_avg);
+        packet[22] = highByte(sq-sq_avg);
+        packet[23] = lowByte(sq-sq_avg);
     }
     else {
         packet[14] = highByte(f_d.phi_kalman);
@@ -667,13 +667,13 @@ int main(void)
             if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
 
             adc_request_sample();
-			
+
 			// Author: Haris Suwignyo
             /* Function to check the battery voltage.
 			 * Battery readings are averaged to avoid spiking voltage drop when motor is spinning at high speed.
 			 * This is done to avoid the drone going to panic mode when the average battery voltage is still safe.
 			 */
-			  
+
             sum_bat_volt += bat_volt;
             if(!(bat_counter++ % 8)) {
                 sum_bat_volt = sum_bat_volt>>3;
@@ -687,7 +687,7 @@ int main(void)
             processRecMsg();
 
 			// Author: Vincent Bejach
-			/* Function to check the connection between drone and PC. 
+			/* Function to check the connection between drone and PC.
 			 * If we don't receive any packet within 100ms, assume that the connection broke.
 			 * Go to panic mode if the connection broke.
 			 */

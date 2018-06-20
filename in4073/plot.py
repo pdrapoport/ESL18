@@ -39,7 +39,7 @@ cutoff = 10  # desired cutoff frequency of the filter, Hz
 def mean(numbers):
     return float(sum(numbers)) / max(len(numbers), 1)
 
-fh = open( "pc_terminal/file.txt" );
+fh = open( "pc_terminal/log_exam2.txt" );
 
 x,sp,sq,phi_kalman,theta_kalman,sr, sr_filtered, sax, sax_filtered, say, say_filtered = [],[],[],[],[],[],[],[],[],[],[]
 t = []

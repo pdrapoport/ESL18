@@ -9,12 +9,12 @@
 
 #define PC
 
-#include <stdio.h> 
-#include <termios.h> 
-#include <unistd.h> 
-#include <string.h> 
-#include <inttypes.h> 
-#include <stdlib.h> 
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <string.h>
+#include <inttypes.h>
+#include <stdlib.h>
 #include <errno.h>
 #include "msgprocess.h"
 
@@ -83,15 +83,15 @@ int term_getchar() {
  **------------------------------------------------------------
  */
 
-#include <termios.h> 
-#include <ctype.h> 
-#include <fcntl.h> 
-#include <unistd.h> 
-#include <stdio.h> 
-#include <assert.h> 
-#include <time.h> 
-#include <sys/types.h> 
-#include <sys/stat.h> 
+#include <termios.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <assert.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/select.h>
 
 int fd_RS232, fd_js;
@@ -570,6 +570,7 @@ int main(int argc, char **argv)
 	struct timeval	tm1, tm2;
 	long long diff;
 	bool exit = false;
+	bool esc = false;
 	bool js_conn = true;
 	bool prev_js_conn = true;
 
@@ -602,7 +603,8 @@ int main(int argc, char **argv)
 		if (diff >= 15) {
 			gettimeofday(&tm1, NULL);
 			//fprintf(stderr, "diff = %llu | absdiff = %llu\n", diff, absdiff);
-			js_conn = checkJoystick();
+
+            js_conn = checkJoystick();
 			if(js_conn && prev_js_conn)
 				sendLRPY(axis[0], axis[1], axis[2],((-1) * axis[3] / 2) + 16384);
 			else if(!js_conn && prev_js_conn){

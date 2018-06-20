@@ -54,8 +54,7 @@ void initValues(){
 
 
 bool checkJS(){
-	//return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
-	return false;
+	return (axis[0] || axis[1] || axis[2] || axis[3] > 50);
 }
 
 bool checkMotor() {
@@ -352,6 +351,7 @@ void process_key(uint8_t c) {
 			axis_offset[0] -= 1000;
 		break;
 	case 27:
+        state = Panic_Mode;
 		demo_done = true;
 		break;
 
@@ -556,27 +556,27 @@ void sendTelemetryPacket() {
 		packet[15] = lowByte(phi - phi_avg);
 		packet[16] = highByte(theta - theta_avg);
 		packet[17] = lowByte(theta - theta_avg);
-        // packet[20] = highByte(sp-sp_avg);
-        // packet[21] = lowByte(sp-sp_avg);
-        // packet[22] = highByte(sq_avg);
-        // packet[23] = lowByte(sq_avg);
+        packet[20] = highByte(sp-sp_avg);
+        packet[21] = lowByte(sp-sp_avg);
+        packet[22] = highByte(sq_avg);
+        packet[23] = lowByte(sq_avg);
 	}
 	else{
 		packet[14] = highByte(f_d.phi_kalman);
 		packet[15] = lowByte(f_d.phi_kalman);
 		packet[16] = highByte(f_d.theta_kalman);
 		packet[17] = lowByte(f_d.theta_kalman);
-        // packet[20] = highByte(p_kalman);
-        // packet[21] = lowByte(p_kalman);
-        // packet[22] = highByte(q_kalman);
-        // packet[23] = lowByte(q_kalman);
+        packet[20] = highByte(p_kalman);
+        packet[21] = lowByte(p_kalman);
+        packet[22] = highByte(q_kalman);
+        packet[23] = lowByte(q_kalman);
 	}
 	packet[18] = highByte(psi - psi_avg);
 	packet[19] = lowByte(psi - psi_avg);
-    packet[20] = highByte(sp-sp_avg); //COMMENT THIS OUT IN CASE OF USING P/Q_KALMAN
-    packet[21] = lowByte(sp-sp_avg);
-    packet[22] = highByte(sq_avg);
-    packet[23] = lowByte(sq_avg);
+    // packet[20] = highByte(sp-sp_avg); //COMMENT THIS OUT IN CASE OF USING P/Q_KALMAN
+    // packet[21] = lowByte(sp-sp_avg);
+    // packet[22] = highByte(sq_avg);
+    // packet[23] = lowByte(sq_avg);
 	packet[24] = highByte(sr - sr_avg);
 	packet[25] = lowByte(sr - sr_avg);
 	packet[26] = highByte(sax - sax_avg);
@@ -632,9 +632,9 @@ int main(void)
     uint32_t lts = get_time_us();
 	uint8_t packet[20];
 
-	while (!demo_done)
+	while (!demo_done || !motors_off)
 	{
-        //connection_lost = false;
+        connection_lost = false;
   		processPkt();
 
 		if (check_timer_flag()) //40 ms

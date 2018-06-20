@@ -70,6 +70,7 @@ void run_filters_and_control(enum states *state){
 			break;
 
 		case Calibration_Mode:
+            calibration_done = false;
 			sp_sum += sp;
 			sq_sum += sq;
 			sr_sum += sr;
@@ -123,10 +124,10 @@ void run_filters_and_control(enum states *state){
 
 		case Raw_Mode:
             //Control with filtered Data
-            pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(sq-sq_avg); //replace this by q_kalman???
-            roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(sp-sp_avg); //replace this by p_kalman????
-            // pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(q_kalman);
-            // roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(p_kalman);
+            // pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(sq-sq_avg); //replace this by q_kalman???
+            // roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(sp-sp_avg); //replace this by p_kalman????
+            pitch = p1 * ((axis[1]>>3) - f_d.theta_kalman) + p2*(q_kalman);
+            roll = p1 * ((axis[0]>>3) - f_d.phi_kalman) - p2*(p_kalman);
             yaw = p * ((axis[2]>>3) - f_d.sr_filtered);
             lift = axis[3]*40;
 			break;

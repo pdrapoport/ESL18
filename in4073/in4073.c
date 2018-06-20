@@ -616,7 +616,6 @@ void sendTelemetryPacket() {
 void sendErrMsg(uint8_t errNum) {
     uint8_t packet[1];
     packet[0] = errNum;
-    uint8_t msglen = cmd2len(DWERR);
     uint8_t *msg = makePayload(DWERR, packet);
     for(int i = 0; i < 6; ++i) {
         uart_put(msg[i]);

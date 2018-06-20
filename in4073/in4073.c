@@ -332,7 +332,7 @@ void process_key(uint8_t c) {
             break;
         case 43:
             //pitch down
-            
+
             if (axis_offset[1] > -31767)
                 axis_offset[1] -= 1000;
             break;
@@ -461,7 +461,7 @@ void process_key(uint8_t c) {
         }
         else {
           //printf("\nCRC FAIL!\n");
-          sendErrMsg(3);
+          //sendErrMsg(3);
           slideMsg(1);
           packState = wait;
         }
@@ -664,7 +664,7 @@ int main(void)
                 sum_bat_volt = sum_bat_volt>>3;
                 if(sum_bat_volt < 550){
                     state = Panic_Mode;
-                    sendErrMsg(4);
+                    //sendErrMsg(4);
                 }
                 sum_bat_volt = 0;
                 }

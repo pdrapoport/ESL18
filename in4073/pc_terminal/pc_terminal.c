@@ -635,10 +635,10 @@ int main(int argc, char **argv)
 			recChar[buffCount] = (uint8_t)c;
 			++buffCount;
 			processPkt();
-		}
-		else
-			term_putchar(c);
-		}
+    		}
+    		else
+    			term_putchar(c);
+    		}
 		if (exit)
 			break;
 	}

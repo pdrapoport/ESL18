@@ -1,20 +1,36 @@
+/*------------------------------------------------------------------
+ *  log.c -- implementation of logging function
+ *
+ * 	Group 7:
+ *  - Pavel Rapoport
+ * 	- Antonio Rueda
+ * 	- Haris Suwignyo
+ * 	- Vincent Bejach
+ *
+ * 	TU Delft
+ *
+ *  June 2018
+ *------------------------------------------------------------------
+ */
+
 #include "in4073.h"
 
-
-void write_packet_flash(){
+// Author: Antonio Rueda
+// Function to write packet to flash memory
+void write_packet_flash() {
     uint8_t packet[20];
     uint32_t timestamp = get_time_us();
     static int j = 0;
 
     uint32_t add = 0x000000+j;
 
-    if (add >0x01FFFF){
+    if (add >0x01FFFF) {
         flash_full = true;
     }
     else
         j=j+20;
 
-    if (!flash_full && start_logging){
+    if (!flash_full && start_logging) {
         packet[0] = fourthByte(timestamp);
         packet[1] = thirdByte(timestamp);
         packet[2] = secondByte(timestamp);
@@ -44,27 +60,31 @@ void write_packet_flash(){
     }
 }
 
-void read_packet_flash(uint8_t * packet){
+// Author: Antonio Rueda
+// Function to read the flash memory
+void read_packet_flash(uint8_t *packet) {
     static int j = 0;
 
     uint32_t add = 0x000000+j;
-    if (add >0x01FFFF){
+    if (add >0x01FFFF) {
         read_completed = true;
         printf("FINISHING READING!\n");
     }
     else
         j=j+20;
 
-	flash_read_bytes(add,&packet[0],20);
+    flash_read_bytes(add,&packet[0],20);
 
 }
 
-void print_to_terminal(uint8_t * packet){  //THIS HAS TO BE REPLACED BY THE PROTOCOL, FROM DRONE2PC
-    if (combine32Byte(packet[0],packet[1],packet[2],packet[3]) == 0xffffffff){
+// Author: Antonio Rueda
+// Function to print the logged data to the terminal
+void print_to_terminal(uint8_t * packet) { //THIS HAS TO BE REPLACED BY THE PROTOCOL, FROM DRONE2PC
+    if (combine32Byte(packet[0],packet[1],packet[2],packet[3]) == 0xffffffff) {
         printf("READING COMPLETED!\n");
         read_completed = true;
     }
-    else{
+    else {
         printf("%10ld ",combine32Byte(packet[0],packet[1],packet[2],packet[3]));
         printf("%6d %6d %6d ",combineByte(packet[4],packet[5]),combineByte(packet[6],packet[7]),combineByte(packet[8],packet[9]));
         printf("%6d ", combineByte(packet[10],packet[11]));

@@ -1,10 +1,17 @@
 /*------------------------------------------------------------------
  *  in4073.h -- defines, globals, function prototypes
  *
- *  I. Protonotarios
- *  Embedded Software Lab
+ *  Modified from in4073.h by I. Protonotarios
  *
- *  July 2016
+ * 	Group 7:
+ *  - Pavel Rapoport
+ * 	- Antonio Rueda
+ * 	- Haris Suwignyo
+ * 	- Vincent Bejach
+ *
+ * 	TU Delft
+ *
+ *  June 2018
  *------------------------------------------------------------------
  */
 
@@ -24,10 +31,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define RED		22
+#define RED		    22
 #define YELLOW		24
-#define GREEN		28
-#define BLUE		30
+#define GREEN		  28
+#define BLUE	  	30
 #define INT_PIN		5
 
 bool demo_done;
@@ -75,17 +82,13 @@ void initialize_butterworth();
 void initialize_kalman();
 
 enum filters {
-    // say_butterworth,
-    // sax_butterworth,
     sr_butterworth,
     kalman_phi,
     kalman_theta
 } filter;
 
 struct filtered_data {
-    //int16_t say_filtered;
     int16_t phi_kalman;
-    //int16_t sax_filtered;
     int16_t theta_kalman;
     int16_t sr_filtered;
 } f_d;
@@ -108,8 +111,6 @@ uint32_t get_time_us(void);
 bool check_timer_flag(void);
 void clear_timer_flag(void);
 
-long last_rec_pkt;
-
 // GPIO
 void gpio_init(void);
 
@@ -124,7 +125,6 @@ void init_queue(queue *q);
 void enqueue(queue *q, char x);
 char dequeue(queue *q);
 void processPkt();
-bool checkJS();
 
 // UART
 #define RX_PIN_NUMBER  16
@@ -192,6 +192,9 @@ void sendErrMsg(uint8_t errNum);
 bool connection_lost;
 bool motors_off; // Update according to the readings
 bool no_failure;
+long last_rec_pkt;
 bool checkMotor();
+bool checkJS();
+bool batteryCheck(uint16_t bat_volt);
 
 #endif // IN4073_H__
